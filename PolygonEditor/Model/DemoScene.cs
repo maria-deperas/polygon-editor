@@ -30,8 +30,6 @@ public static class DemoScene
 
         scene.Constraints.Add(new FixedLengthConstraint(house.Edges[4], 200));
         scene.Constraints.Add(new ParallelConstraint(house.Edges[0], quad.Edges[1]));
-        
-        Console.WriteLine(scene.Constraints[0].IsSatisfied());
 
         return scene;
     }

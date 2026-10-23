@@ -14,6 +14,6 @@ public sealed class ParallelConstraint(Edge first, Edge second) : Constraint
 
     public override bool IsSatisfied(double tolerance = 1E-06)
     {
-        return Math.Abs(Vec2.Cross(first.Direction.Normalized(), second.Direction.Normalized())) <= tolerance;
+        return Math.Abs(Vec2.Cross(First.Direction.Normalized(), Second.Direction.Normalized())) <= tolerance;
     }
 }
