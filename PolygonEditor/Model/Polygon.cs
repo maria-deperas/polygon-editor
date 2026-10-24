@@ -36,4 +36,46 @@ public sealed class Polygon
             vertex.Position += delta;
         }
     }
+
+    public Vertex SplitEdge(Edge edge)
+    {
+        int i = _edges.IndexOf(edge);
+        var newVertex = new Vertex(edge.Midpoint);
+        _vertices.Insert(i + 1, newVertex);
+
+        var first  = new Edge(_vertices[i], newVertex);
+        var second = new Edge(newVertex, _vertices[(i + 2) % _vertices.Count]); 
+        
+        _edges[i] = first;
+        _edges.Insert(i + 1, second);
+
+        return newVertex;
+    }
+
+    public bool RemoveVertex(Vertex vertex)
+    {
+        int n = _vertices.Count;
+        if (n <= 3) return false;
+
+        int i = _vertices.IndexOf(vertex);
+        var prev = _vertices[(i - 1 + n) % n];
+        var next = _vertices[(i + 1) % n];
+        var merged = new Edge(prev, next);
+
+        _vertices.RemoveAt(i);
+
+        if (i > 0)
+        {
+            _edges[i - 1] = merged;
+            _edges.RemoveAt(i);
+        }
+        else
+        {
+            _edges.RemoveAt(n - 1);
+            _edges.RemoveAt(0);
+            _edges.Add(merged);
+        }
+
+        return true;
+    }
 }
