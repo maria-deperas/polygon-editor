@@ -16,10 +16,13 @@ namespace PolygonEditor.Views;
 public sealed class EditorCanvas : Control
 {
     private const double VertexHitRadius = 8;
+    private const double EdgeHitTolerance = 5;
 
     private PixelBuffer? _buffer;
     private WriteableBitmap? _bitmap;
     private bool _useBresenham;
+    private Polygon? _draggedPolygon;
+    private Vec2 _lastMouse;
 
     // Vertex currently dragged by the mouse, null when nothing is dragged.
     private HitTester.VertexHit? _draggedVertex;
@@ -101,19 +104,42 @@ public sealed class EditorCanvas : Control
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
-        _draggedVertex = HitTester.FindVertex(Scene, ToVec2(e), VertexHitRadius);
+        Vec2 pos = ToVec2(e);
 
-        // Keep receiving move events even when the cursor leaves the control.
-        if (_draggedVertex != null)
+        _draggedVertex = HitTester.FindVertex(Scene, pos, VertexHitRadius);
+        if (_draggedVertex == null)
+        {
+            var edgeHit = HitTester.FindEdge(Scene, pos, EdgeHitTolerance);
+            if (edgeHit != null)
+            {
+                _draggedPolygon = edgeHit.Value.Polygon;
+                _lastMouse = pos;
+            }
+        }
+
+        if (_draggedVertex != null || _draggedPolygon != null)
             e.Pointer.Capture(this);
     }
 
     protected override void OnPointerMoved(PointerEventArgs e)
     {
         base.OnPointerMoved(e);
-        if (_draggedVertex == null) return;
+        Vec2 pos = ToVec2(e);
 
-        _draggedVertex.Value.Vertex.Position = ToVec2(e);
+        if (_draggedVertex != null)
+        {
+            _draggedVertex.Value.Vertex.Position = pos;
+        }
+        else if (_draggedPolygon != null)
+        {
+            _draggedPolygon.Translate(pos - _lastMouse);
+            _lastMouse = pos;
+        }
+        else
+        {
+            return;
+        }
+
         InvalidateVisual();
     }
 
@@ -122,5 +148,6 @@ public sealed class EditorCanvas : Control
         base.OnPointerReleased(e);
         e.Pointer.Capture(null);
         _draggedVertex = null;
+        _draggedPolygon = null;
     }
 }
