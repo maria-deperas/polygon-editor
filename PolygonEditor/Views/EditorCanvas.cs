@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Avalonia;
@@ -105,6 +106,14 @@ public sealed class EditorCanvas : Control
     {
         base.OnPointerPressed(e);
         Vec2 pos = ToVec2(e);
+        
+        var props = e.GetCurrentPoint(this).Properties;
+        
+        if (props.IsRightButtonPressed)
+        {
+            ShowContextMenu(pos);
+            return;
+        }
 
         _draggedVertex = HitTester.FindVertex(Scene, pos, VertexHitRadius);
         if (_draggedVertex == null)
@@ -149,5 +158,43 @@ public sealed class EditorCanvas : Control
         e.Pointer.Capture(null);
         _draggedVertex = null;
         _draggedPolygon = null;
+    }
+
+    private void ShowContextMenu(Vec2 pos)
+    {
+        var vertexHit = HitTester.FindVertex(Scene, pos, VertexHitRadius);
+        if (vertexHit != null) { ShowVertexMenu(vertexHit.Value); return; }
+
+        var edgeHit = HitTester.FindEdge(Scene, pos, EdgeHitTolerance);
+        if (edgeHit != null) ShowEdgeMenu(edgeHit.Value);
+    }
+
+    private void ShowEdgeMenu(HitTester.EdgeHit hit)
+    {
+        var item = new MenuItem { Header = "Add vertex" };
+        item.Click += (_, _) =>
+        {
+            Scene.RemoveConstraintsOf(hit.Edge);
+            hit.Polygon.SplitEdge(hit.Edge);
+            InvalidateVisual();
+        };
+        new ContextMenu { Items = { item } }.Open(this);
+    }
+
+    private void ShowVertexMenu(HitTester.VertexHit hit)
+    {
+        var item = new MenuItem { Header = "Delete vertex" };
+        item.IsEnabled = hit.Polygon.Vertices.Count > 3;
+        item.Click += (_, _) =>
+        {
+            var touching = hit.Polygon.Edges
+                .Where(e => e.Start == hit.Vertex || e.End == hit.Vertex)
+                .ToList();
+            foreach (var edge in touching)
+                Scene.RemoveConstraintsOf(edge);
+            hit.Polygon.RemoveVertex(hit.Vertex);
+            InvalidateVisual();
+        };
+        new ContextMenu { Items = { item } }.Open(this);
     }
 }
