@@ -2,9 +2,11 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
+using PolygonEditor.Editing;
 using PolygonEditor.Geometry;
 using PolygonEditor.Model;
 using PolygonEditor.Rendering;
@@ -13,12 +15,19 @@ namespace PolygonEditor.Views;
 
 public sealed class EditorCanvas : Control
 {
-    public Scene Scene { get; set; } = new();
-    
+    private const double VertexHitRadius = 8;
+    private const double EdgeHitTolerance = 5;
+
     private PixelBuffer? _buffer;
     private WriteableBitmap? _bitmap;
-    
     private bool _useBresenham;
+    private Polygon? _draggedPolygon;
+    private Vec2 _lastMouse;
+
+    // Vertex currently dragged by the mouse, null when nothing is dragged.
+    private HitTester.VertexHit? _draggedVertex;
+
+    public Scene Scene { get; set; } = new();
 
     public bool UseBresenham
     {
@@ -29,7 +38,7 @@ public sealed class EditorCanvas : Control
             InvalidateVisual();
         }
     }
-    
+
     public override void Render(DrawingContext context)
     {
         int width = (int)Bounds.Width;
@@ -54,6 +63,7 @@ public sealed class EditorCanvas : Control
                 for (var y = 0; y < height; y++)
                     Marshal.Copy(pixels, y * width, fb.Address + y * fb.RowBytes, width);
             }
+
             context.DrawImage(_bitmap!, new Rect(0, 0, width, height));
         }
         else
@@ -62,22 +72,26 @@ public sealed class EditorCanvas : Control
             DrawEdges(new LibraryLineDrawer(context));
         }
 
-        DrawVertices(context); 
+        DrawVertices(context);
     }
 
     private static Point ToPoint(Vec2 v) => new(v.X, v.Y);
+
+    private Vec2 ToVec2(PointerEventArgs e)
+    {
+        Point p = e.GetPosition(this);
+        return new Vec2(p.X, p.Y);
+    }
 
     private void DrawEdges(ILineDrawer drawer)
     {
         foreach (var polygon in Scene.Polygons)
         {
             foreach (var edge in polygon.Edges)
-            {
                 drawer.DrawLine(edge.Start.Position, edge.End.Position);
-            }
         }
     }
-    
+
     private void DrawVertices(DrawingContext context)
     {
         foreach (var polygon in Scene.Polygons)
@@ -85,5 +99,55 @@ public sealed class EditorCanvas : Control
             foreach (var vertex in polygon.Vertices)
                 context.DrawEllipse(Brushes.Black, null, ToPoint(vertex.Position), 4, 4);
         }
+    }
+
+    protected override void OnPointerPressed(PointerPressedEventArgs e)
+    {
+        base.OnPointerPressed(e);
+        Vec2 pos = ToVec2(e);
+
+        _draggedVertex = HitTester.FindVertex(Scene, pos, VertexHitRadius);
+        if (_draggedVertex == null)
+        {
+            var edgeHit = HitTester.FindEdge(Scene, pos, EdgeHitTolerance);
+            if (edgeHit != null)
+            {
+                _draggedPolygon = edgeHit.Value.Polygon;
+                _lastMouse = pos;
+            }
+        }
+
+        if (_draggedVertex != null || _draggedPolygon != null)
+            e.Pointer.Capture(this);
+    }
+
+    protected override void OnPointerMoved(PointerEventArgs e)
+    {
+        base.OnPointerMoved(e);
+        Vec2 pos = ToVec2(e);
+
+        if (_draggedVertex != null)
+        {
+            _draggedVertex.Value.Vertex.Position = pos;
+        }
+        else if (_draggedPolygon != null)
+        {
+            _draggedPolygon.Translate(pos - _lastMouse);
+            _lastMouse = pos;
+        }
+        else
+        {
+            return;
+        }
+
+        InvalidateVisual();
+    }
+
+    protected override void OnPointerReleased(PointerReleasedEventArgs e)
+    {
+        base.OnPointerReleased(e);
+        e.Pointer.Capture(null);
+        _draggedVertex = null;
+        _draggedPolygon = null;
     }
 }

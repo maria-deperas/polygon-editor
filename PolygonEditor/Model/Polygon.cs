@@ -27,4 +27,13 @@ public sealed class Polygon
             _edges.Add(new Edge(_vertices[i], _vertices[(i + 1) % n]));
         }
     }
+
+    public void Translate(Vec2 delta)
+    {
+        // TODO: also translate Bézier control points
+        foreach (var vertex in _vertices)
+        {
+            vertex.Position += delta;
+        }
+    }
 }
