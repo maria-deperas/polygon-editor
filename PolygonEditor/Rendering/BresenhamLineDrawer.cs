@@ -18,8 +18,8 @@ public sealed class BresenhamLineDrawer(PixelBuffer buffer) : ILineDrawer
             buffer.SetPixel(x0, y0, color);
             if (x0 == x1 && y0 == y1) break;
             int e2 = 2 * err;
-            if (e2 >= dy) { err += dy; x0 += sx; }   // step in x
-            if (e2 <= dx) { err += dx; y0 += sy; }   // step in y
+            if (e2 >= dy) { err += dy; x0 += sx; }
+            if (e2 <= dx) { err += dx; y0 += sy; }
         }
     }
 

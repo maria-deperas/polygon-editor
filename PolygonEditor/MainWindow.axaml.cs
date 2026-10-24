@@ -9,5 +9,6 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         Editor.Scene = DemoScene.Create();
+        Editor.UseBresenham = true;
     }
 }
