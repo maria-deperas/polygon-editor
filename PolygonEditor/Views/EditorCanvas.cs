@@ -32,6 +32,8 @@ public sealed class EditorCanvas : Control
     private HitTester.VertexHit? _draggedVertex;
 
     public Scene Scene { get; set; } = new();
+    
+    private Edge? _parallelSource;
 
     public bool UseBresenham
     {
@@ -78,6 +80,12 @@ public sealed class EditorCanvas : Control
 
         DrawVertices(context);
         DrawConstraintIcons(context);
+        
+        if (_parallelSource != null)
+        {
+            var pen = new Pen(Brushes.Orange, 3);
+            context.DrawLine(pen, ToPoint(_parallelSource.Start.Position), ToPoint(_parallelSource.End.Position));
+        }
     }
 
     private static Point ToPoint(Vec2 v) => new(v.X, v.Y);
@@ -116,6 +124,22 @@ public sealed class EditorCanvas : Control
         if (props.IsRightButtonPressed)
         {
             ShowContextMenu(pos);
+            return;
+        }
+        
+        if (_parallelSource != null)
+        {
+            var target = HitTester.FindEdge(Scene, pos, EdgeHitTolerance);
+            if (target != null && target.Value.Edge != _parallelSource
+                               && !target.Value.Edge.SharesVertexWith(_parallelSource))
+            {
+                var constraint = new ParallelConstraint(_parallelSource, target.Value.Edge);
+                Scene.Constraints.Add(constraint);
+                if (!ConstraintSolver.Solve(Scene, null))
+                    Scene.Constraints.Remove(constraint);
+            }
+            _parallelSource = null;
+            InvalidateVisual();
             return;
         }
 
@@ -184,6 +208,40 @@ public sealed class EditorCanvas : Control
         };
         var menu = new ContextMenu();
         menu.Items.Add(item);
+        
+        var setLength = new MenuItem { Header = "Set length…" };
+        setLength.Click += async (_, _) =>
+        {
+            if (TopLevel.GetTopLevel(this) is not Window owner) return;
+            double? length = await new LengthDialog(hit.Edge.Length).ShowDialog<double?>(owner);
+            if (length == null) return;
+
+            var old = Scene.Constraints.OfType<FixedLengthConstraint>()
+                .FirstOrDefault(f => f.Edge == hit.Edge);
+            if (old != null)
+                Scene.Constraints.Remove(old);
+
+            var constraint = new FixedLengthConstraint(hit.Edge, length.Value);
+            Scene.Constraints.Add(constraint);
+
+            if (!ConstraintSolver.Solve(Scene, null))
+            {
+                // Impossible length: undo
+                Scene.Constraints.Remove(constraint);
+                if (old != null)
+                    Scene.Constraints.Add(old);
+            }
+            InvalidateVisual();
+        };
+        menu.Items.Add(setLength);
+        
+        var makeParallel = new MenuItem { Header = "Make parallel…" };
+        makeParallel.Click += (_, _) =>
+        {
+            _parallelSource = hit.Edge;
+            InvalidateVisual();
+        };
+        menu.Items.Add(makeParallel);
 
         foreach (var c in Scene.Constraints)
         {
@@ -197,32 +255,6 @@ public sealed class EditorCanvas : Control
                 InvalidateVisual();
             };
             menu.Items.Add(remove);
-            
-            var setLength = new MenuItem { Header = "Set length…" };
-            setLength.Click += async (_, _) =>
-            {
-                if (TopLevel.GetTopLevel(this) is not Window owner) return;
-                double? length = await new LengthDialog(hit.Edge.Length).ShowDialog<double?>(owner);
-                if (length == null) return;
-
-                var old = Scene.Constraints.OfType<FixedLengthConstraint>()
-                    .FirstOrDefault(f => f.Edge == hit.Edge);
-                if (old != null)
-                    Scene.Constraints.Remove(old);
-
-                var constraint = new FixedLengthConstraint(hit.Edge, length.Value);
-                Scene.Constraints.Add(constraint);
-
-                if (!ConstraintSolver.Solve(Scene, null))
-                {
-                    // Impossible length: undo
-                    Scene.Constraints.Remove(constraint);
-                    if (old != null)
-                        Scene.Constraints.Add(old);
-                }
-                InvalidateVisual();
-            };
-            menu.Items.Add(setLength);
         }
 
         menu.Open(this);

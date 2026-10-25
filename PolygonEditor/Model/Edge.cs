@@ -18,4 +18,8 @@ public sealed class Edge
     public Vec2 Direction => End.Position - Start.Position;
     public double Length => Direction.Length;
     public Vec2 Midpoint => Start.Position + Direction / 2;
+    
+    public bool SharesVertexWith(Edge other) =>
+        Start == other.Start || Start == other.End ||
+        End == other.Start || End == other.End;
 }
