@@ -82,6 +82,7 @@ public sealed class EditorCanvas : Control
 
         DrawControlPolygons(context);
         DrawVertices(context);
+        DrawContinuityLabels(context);
         DrawConstraintIcons(context);
         
         if (_parallelSource != null)
@@ -178,16 +179,17 @@ public sealed class EditorCanvas : Control
         if (_draggedVertex != null)
         {
             var hit = _draggedVertex.Value;
-            if (!ConstraintSolver.MoveVertex(Scene, hit.Vertex, pos))
-                hit.Polygon.Translate(pos - hit.Vertex.Position);
+            var before = ContinuitySolver.Snapshot(Scene);
+            if (ConstraintSolver.MoveVertex(Scene, hit.Vertex, pos))
+                ContinuitySolver.FollowVertices(Scene, before);
+            else
+                hit.Polygon.Translate(pos - hit.Vertex.Position); // already moves control points
+            ContinuitySolver.Apply(Scene);
         }
         else if (_draggedControl != null)
         {
             var hit = _draggedControl.Value;
-            if (hit.IsFirst)
-                hit.Bezier.Control1 = pos;
-            else
-                hit.Bezier.Control2 = pos;
+            ContinuitySolver.MoveControlPoint(Scene, hit.Polygon, hit.Edge, hit.Bezier, hit.IsFirst, pos);
         }
         else if (_draggedPolygon != null)
         {
@@ -257,6 +259,7 @@ public sealed class EditorCanvas : Control
                 if (old != null)
                     Scene.Constraints.Add(old);
             }
+            
             InvalidateVisual();
         };
         menu.Items.Add(setLength);
@@ -286,6 +289,13 @@ public sealed class EditorCanvas : Control
                 Vec2 dir = hit.Edge.Direction;
                 hit.Edge.Shape = new BezierShape(start + dir / 3, start + dir * 2 / 3);
             }
+            
+            // Default continuity (G1) unless the user already chose one
+            foreach (var v in new[] { hit.Edge.Start, hit.Edge.End })
+                if (!v.ContinuityIsExplicit)
+                    v.Continuity = Continuity.G1;
+            ContinuitySolver.Apply(Scene);
+            
             InvalidateVisual();
         };
         menu.Items.Add(toggleBezier);
@@ -321,7 +331,28 @@ public sealed class EditorCanvas : Control
             hit.Polygon.RemoveVertex(hit.Vertex);
             InvalidateVisual();
         };
-        new ContextMenu { Items = { item } }.Open(this);
+        var menu = new ContextMenu { Items = { item } };
+
+        var inEdge = hit.Polygon.EdgeBefore(hit.Vertex);
+        var outEdge = hit.Polygon.EdgeAfter(hit.Vertex);
+        if (inEdge.Shape is BezierShape || outEdge.Shape is BezierShape)
+        {
+            foreach (var continuity in new[] { Continuity.G0, Continuity.G1, Continuity.C1 })
+            {
+                string mark = hit.Vertex.Continuity == continuity ? "✓ " : "";
+                var option = new MenuItem { Header = $"{mark}Continuity {continuity}" };
+                option.Click += (_, _) =>
+                {
+                    hit.Vertex.Continuity = continuity;
+                    hit.Vertex.ContinuityIsExplicit = true;
+                    ContinuitySolver.Apply(Scene);
+                    InvalidateVisual();
+                };
+                menu.Items.Add(option);
+            }
+        }
+
+        menu.Open(this);
     }
 
     private void DrawConstraintIcons(DrawingContext context)
@@ -366,6 +397,21 @@ public sealed class EditorCanvas : Control
                 context.DrawEllipse(Brushes.RoyalBlue, null, p1, 4, 4);
                 context.DrawEllipse(Brushes.RoyalBlue, null, p2, 4, 4);
             }
+        }
+    }
+    
+    private void DrawContinuityLabels(DrawingContext context)
+    {
+        foreach (var polygon in Scene.Polygons)
+        foreach (var v in polygon.Vertices)
+        {
+            if (polygon.EdgeBefore(v).Shape is not BezierShape &&
+                polygon.EdgeAfter(v).Shape is not BezierShape)
+                continue;
+
+            var text = new FormattedText(v.Continuity.ToString(), CultureInfo.InvariantCulture,
+                FlowDirection.LeftToRight, Typeface.Default, 11, Brushes.RoyalBlue);
+            context.DrawText(text, ToPoint(v.Position + new Vec2(8, -18)));
         }
     }
 }
