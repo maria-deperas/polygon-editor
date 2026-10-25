@@ -14,13 +14,6 @@ public partial class MainWindow : Window
     
     private void OnBresenhamChanged(object? sender, RoutedEventArgs e)
     {
-        if (BresenhamRadio.IsChecked == true)
-        {
-            Editor.UseBresenham = true;
-        }
-        else
-        {
-            Editor.UseBresenham = false;
-        }
+        Editor.UseBresenham = BresenhamRadio.IsChecked == true;
     }
 }

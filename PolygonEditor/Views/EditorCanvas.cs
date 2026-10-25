@@ -27,13 +27,12 @@ public sealed class EditorCanvas : Control
     private bool _useBresenham;
     private Polygon? _draggedPolygon;
     private Vec2 _lastMouse;
+    private Edge? _parallelSource;
 
     // Vertex currently dragged by the mouse, null when nothing is dragged.
     private HitTester.VertexHit? _draggedVertex;
 
     public Scene Scene { get; set; } = new();
-    
-    private Edge? _parallelSource;
 
     public bool UseBresenham
     {
@@ -165,7 +164,9 @@ public sealed class EditorCanvas : Control
 
         if (_draggedVertex != null)
         {
-            ConstraintSolver.MoveVertex(Scene, _draggedVertex.Value.Vertex, pos);
+            var hit = _draggedVertex.Value;
+            if (!ConstraintSolver.MoveVertex(Scene, hit.Vertex, pos))
+                hit.Polygon.Translate(pos - hit.Vertex.Position);
         }
         else if (_draggedPolygon != null)
         {
