@@ -46,7 +46,8 @@ public static class ContinuitySolver
                 inB.Control2 = Fit(v, inB.Control2, -OutgoingTangent(outEdge));
         }
     }
-        public static Dictionary<Vertex, Vec2> Snapshot(Scene scene)
+    
+    public static Dictionary<Vertex, Vec2> Snapshot(Scene scene)
     {
         var positions = new Dictionary<Vertex, Vec2>();
         foreach (var polygon in scene.Polygons)
