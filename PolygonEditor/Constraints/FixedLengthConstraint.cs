@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using PolygonEditor.Geometry;
 using PolygonEditor.Model;
 
 namespace PolygonEditor.Constraints;
@@ -14,5 +15,28 @@ public sealed class FixedLengthConstraint(Edge edge, double length) : Constraint
     public override bool IsSatisfied(double tolerance = 1E-06)
     {
         return Math.Abs(Edge.Length - Length) <=  tolerance;
+    }
+    
+    public override void Project(Vertex? pinned)
+    {
+        var a = Edge.Start;
+        var b = Edge.End;
+        var d = Edge.Direction;
+        var dir = d.Length < 1e-12 ? new Vec2(1, 0) : d.Normalized();
+        var error = d.Length - Length;
+
+        if (pinned == a)
+        {
+            b.Position -= dir * error;
+        }
+        else if (pinned == b)
+        {
+            a.Position += dir * error;
+        }
+        else
+        {
+            a.Position += dir * (error / 2);
+            b.Position -= dir * (error / 2);
+        }
     }
 }
