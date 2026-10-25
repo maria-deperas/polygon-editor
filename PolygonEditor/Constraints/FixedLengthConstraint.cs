@@ -39,4 +39,6 @@ public sealed class FixedLengthConstraint(Edge edge, double length) : Constraint
             b.Position -= dir * (error / 2);
         }
     }
+    
+    public override string GetLabel(int number) => $"L={Length:0}";
 }

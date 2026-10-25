@@ -11,16 +11,20 @@ public static class ConstraintSolver
     
     public static bool MoveVertex(Scene scene, Vertex vertex, Vec2 target)
     {
+        Vec2 old = vertex.Position;
+        vertex.Position = target;
+        if (Solve(scene, vertex))
+            return true;
+        vertex.Position = old;
+        return false;
+    }
+
+    public static bool Solve(Scene scene, Vertex? pinned)
+    {
         var saved = new Dictionary<Vertex, Vec2>();
         foreach (Polygon polygon in scene.Polygons)
-        {
-            foreach (Vertex v in polygon.Vertices)
-            {
-                saved.Add(v, v.Position);
-            }
-        }
-
-        vertex.Position = target;
+        foreach (Vertex v in polygon.Vertices)
+            saved.Add(v, v.Position);
 
         for (int i = 0; i < MaxIterations; i++)
         {
@@ -28,19 +32,15 @@ public static class ConstraintSolver
                 return true;
 
             foreach (var c in scene.Constraints)
-            {
-                c.Project(vertex);
-            }
+                c.Project(pinned);
         }
 
         if (scene.Constraints.All(c => c.IsSatisfied()))
             return true;
 
-        // Move impossible: restore positions
+        // Constraints cannot be satisfied: restore positions
         foreach (var (v, pos) in saved)
-        {
             v.Position = pos;
-        }
         return false;
     }
 }
