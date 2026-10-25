@@ -77,6 +77,7 @@ public sealed class EditorCanvas : Control
             DrawEdges(new LibraryLineDrawer(context));
         }
 
+        DrawControlPolygons(context);
         DrawVertices(context);
         DrawConstraintIcons(context);
         
@@ -100,7 +101,13 @@ public sealed class EditorCanvas : Control
         foreach (var polygon in Scene.Polygons)
         {
             foreach (var edge in polygon.Edges)
-                drawer.DrawLine(edge.Start.Position, edge.End.Position);
+            {
+                if (edge.Shape is BezierShape bezier)
+                    BezierDrawer.Draw(drawer, edge.Start.Position, bezier.Control1,
+                        bezier.Control2, edge.End.Position);
+                else
+                    drawer.DrawLine(edge.Start.Position, edge.End.Position);
+            }
         }
     }
 
@@ -246,6 +253,27 @@ public sealed class EditorCanvas : Control
             InvalidateVisual();
         };
         menu.Items.Add(makeParallel);
+        
+        bool isBezier = hit.Edge.Shape is BezierShape;
+        var toggleBezier = new MenuItem { Header = isBezier ? "Convert to line" : "Convert to Bézier" };
+        toggleBezier.Click += (_, _) =>
+        {
+            // Length/parallel constraints describe a straight segment, so drop them
+            Scene.RemoveConstraintsOf(hit.Edge);
+
+            if (isBezier)
+            {
+                hit.Edge.Shape = new LineShape();
+            }
+            else
+            {
+                Vec2 start = hit.Edge.Start.Position;
+                Vec2 dir = hit.Edge.Direction;
+                hit.Edge.Shape = new BezierShape(start + dir / 3, start + dir * 2 / 3);
+            }
+            InvalidateVisual();
+        };
+        menu.Items.Add(toggleBezier);
 
         foreach (var c in Scene.Constraints)
         {
@@ -296,6 +324,32 @@ public sealed class EditorCanvas : Control
                 var text = new FormattedText(label, CultureInfo.InvariantCulture,
                     FlowDirection.LeftToRight, Typeface.Default, 12, Brushes.DarkRed);
                 context.DrawText(text, ToPoint(pos));
+            }
+        }
+    }
+    
+    private void DrawControlPolygons(DrawingContext context)
+    {
+        var dashed = new Pen(Brushes.Gray, 1, DashStyle.Dash);
+
+        foreach (var polygon in Scene.Polygons)
+        {
+            foreach (var edge in polygon.Edges)
+            {
+                if (edge.Shape is not BezierShape bezier)
+                    continue;
+
+                Point p0 = ToPoint(edge.Start.Position);
+                Point p1 = ToPoint(bezier.Control1);
+                Point p2 = ToPoint(bezier.Control2);
+                Point p3 = ToPoint(edge.End.Position);
+
+                context.DrawLine(dashed, p0, p1);
+                context.DrawLine(dashed, p1, p2);
+                context.DrawLine(dashed, p2, p3);
+
+                context.DrawEllipse(Brushes.RoyalBlue, null, p1, 4, 4);
+                context.DrawEllipse(Brushes.RoyalBlue, null, p2, 4, 4);
             }
         }
     }
