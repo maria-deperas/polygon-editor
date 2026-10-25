@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -75,6 +77,7 @@ public sealed class EditorCanvas : Control
         }
 
         DrawVertices(context);
+        DrawConstraintIcons(context);
     }
 
     private static Point ToPoint(Vec2 v) => new(v.X, v.Y);
@@ -197,5 +200,27 @@ public sealed class EditorCanvas : Control
             InvalidateVisual();
         };
         new ContextMenu { Items = { item } }.Open(this);
+    }
+
+    private void DrawConstraintIcons(DrawingContext context)
+    {
+        var count = new Dictionary<Edge, int>();
+        int pairNumber = 0;
+        for (int i = 0; i < Scene.Constraints.Count; i++)
+        {
+            var c = Scene.Constraints[i];
+            int number = c.Edges.Count > 1 ? ++pairNumber : 0;
+            string label = c.GetLabel(number);
+
+            foreach (var edge in c.Edges)
+            {
+                int n = count.GetValueOrDefault(edge);
+                count[edge] = n + 1;
+                Vec2 pos = edge.Midpoint + new Vec2(6, 4 + 14 * n);
+                var text = new FormattedText(label, CultureInfo.InvariantCulture,
+                    FlowDirection.LeftToRight, Typeface.Default, 12, Brushes.DarkRed);
+                context.DrawText(text, ToPoint(pos));
+            }
+        }
     }
 }

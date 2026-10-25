@@ -63,4 +63,5 @@ public sealed class ParallelConstraint(Edge first, Edge second) : Constraint
             e.End.Position = mid + (dir * len) / 2;
         }
     }
+    public override string GetLabel(int number) => $"∥{number}";
 }
