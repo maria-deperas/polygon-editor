@@ -190,6 +190,9 @@ public sealed class EditorCanvas : Control
 
     private void ShowContextMenu(Vec2 pos)
     {
+        _parallelSource = null;
+        InvalidateVisual();
+
         var vertexHit = HitTester.FindVertex(Scene, pos, VertexHitRadius);
         if (vertexHit != null) { ShowVertexMenu(vertexHit.Value); return; }
 
