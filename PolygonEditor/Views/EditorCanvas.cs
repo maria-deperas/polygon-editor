@@ -197,6 +197,32 @@ public sealed class EditorCanvas : Control
                 InvalidateVisual();
             };
             menu.Items.Add(remove);
+            
+            var setLength = new MenuItem { Header = "Set length…" };
+            setLength.Click += async (_, _) =>
+            {
+                if (TopLevel.GetTopLevel(this) is not Window owner) return;
+                double? length = await new LengthDialog(hit.Edge.Length).ShowDialog<double?>(owner);
+                if (length == null) return;
+
+                var old = Scene.Constraints.OfType<FixedLengthConstraint>()
+                    .FirstOrDefault(f => f.Edge == hit.Edge);
+                if (old != null)
+                    Scene.Constraints.Remove(old);
+
+                var constraint = new FixedLengthConstraint(hit.Edge, length.Value);
+                Scene.Constraints.Add(constraint);
+
+                if (!ConstraintSolver.Solve(Scene, null))
+                {
+                    // Impossible length: undo
+                    Scene.Constraints.Remove(constraint);
+                    if (old != null)
+                        Scene.Constraints.Add(old);
+                }
+                InvalidateVisual();
+            };
+            menu.Items.Add(setLength);
         }
 
         menu.Open(this);
