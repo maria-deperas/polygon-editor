@@ -30,7 +30,7 @@ public static class BezierDrawer
         Vec2 point = d;
         for (int i = 0; i < n; i++)
         {
-            Vec2 next = point + delta1;
+            Vec2 next = i == n - 1 ? p3 : point + delta1;
             drawer.DrawLine(point, next);
             point = next;
             delta1 += delta2;
