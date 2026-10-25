@@ -182,7 +182,24 @@ public sealed class EditorCanvas : Control
             hit.Polygon.SplitEdge(hit.Edge);
             InvalidateVisual();
         };
-        new ContextMenu { Items = { item } }.Open(this);
+        var menu = new ContextMenu();
+        menu.Items.Add(item);
+
+        foreach (var c in Scene.Constraints)
+        {
+            if (!c.Edges.Contains(hit.Edge))
+                continue;
+
+            var remove = new MenuItem { Header = $"Remove {Scene.LabelOf(c)}" };
+            remove.Click += (_, _) =>
+            {
+                Scene.Constraints.Remove(c);
+                InvalidateVisual();
+            };
+            menu.Items.Add(remove);
+        }
+
+        menu.Open(this);
     }
 
     private void ShowVertexMenu(HitTester.VertexHit hit)
@@ -205,12 +222,9 @@ public sealed class EditorCanvas : Control
     private void DrawConstraintIcons(DrawingContext context)
     {
         var count = new Dictionary<Edge, int>();
-        int pairNumber = 0;
-        for (int i = 0; i < Scene.Constraints.Count; i++)
+        foreach (var c in Scene.Constraints)
         {
-            var c = Scene.Constraints[i];
-            int number = c.Edges.Count > 1 ? ++pairNumber : 0;
-            string label = c.GetLabel(number);
+            string label = Scene.LabelOf(c);
 
             foreach (var edge in c.Edges)
             {
