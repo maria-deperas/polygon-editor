@@ -43,6 +43,15 @@ public sealed class Polygon
         }
     }
     
+    // Edge i goes from vertex i to vertex i+1
+    public Edge EdgeBefore(Vertex v)
+    {
+        int n = _edges.Count;
+        return _edges[(_vertices.IndexOf(v) - 1 + n) % n];
+    }
+
+    public Edge EdgeAfter(Vertex v) => _edges[_vertices.IndexOf(v)];
+    
     public Vertex SplitEdge(Edge edge)
     {
         int i = _edges.IndexOf(edge);
