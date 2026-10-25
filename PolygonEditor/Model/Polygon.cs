@@ -30,13 +30,19 @@ public sealed class Polygon
 
     public void Translate(Vec2 delta)
     {
-        // TODO: also translate Bézier control points
         foreach (var vertex in _vertices)
-        {
             vertex.Position += delta;
+
+        foreach (var edge in _edges)
+        {
+            if (edge.Shape is BezierShape bezier)
+            {
+                bezier.Control1 += delta;
+                bezier.Control2 += delta;
+            }
         }
     }
-
+    
     public Vertex SplitEdge(Edge edge)
     {
         int i = _edges.IndexOf(edge);
