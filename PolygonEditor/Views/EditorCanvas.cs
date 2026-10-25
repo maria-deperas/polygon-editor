@@ -31,6 +31,9 @@ public sealed class EditorCanvas : Control
 
     // Vertex currently dragged by the mouse, null when nothing is dragged.
     private HitTester.VertexHit? _draggedVertex;
+    
+    // Bezier control point currently dragged, null when none.
+    private HitTester.ControlPointHit? _draggedControl;
 
     public Scene Scene { get; set; } = new();
 
@@ -151,6 +154,9 @@ public sealed class EditorCanvas : Control
 
         _draggedVertex = HitTester.FindVertex(Scene, pos, VertexHitRadius);
         if (_draggedVertex == null)
+            _draggedControl = HitTester.FindControlPoint(Scene, pos, VertexHitRadius);
+
+        if (_draggedVertex == null && _draggedControl == null)
         {
             var edgeHit = HitTester.FindEdge(Scene, pos, EdgeHitTolerance);
             if (edgeHit != null)
@@ -160,7 +166,7 @@ public sealed class EditorCanvas : Control
             }
         }
 
-        if (_draggedVertex != null || _draggedPolygon != null)
+        if (_draggedVertex != null || _draggedControl != null || _draggedPolygon != null)
             e.Pointer.Capture(this);
     }
 
@@ -174,6 +180,14 @@ public sealed class EditorCanvas : Control
             var hit = _draggedVertex.Value;
             if (!ConstraintSolver.MoveVertex(Scene, hit.Vertex, pos))
                 hit.Polygon.Translate(pos - hit.Vertex.Position);
+        }
+        else if (_draggedControl != null)
+        {
+            var hit = _draggedControl.Value;
+            if (hit.IsFirst)
+                hit.Bezier.Control1 = pos;
+            else
+                hit.Bezier.Control2 = pos;
         }
         else if (_draggedPolygon != null)
         {
@@ -194,6 +208,7 @@ public sealed class EditorCanvas : Control
         e.Pointer.Capture(null);
         _draggedVertex = null;
         _draggedPolygon = null;
+        _draggedControl = null;
     }
 
     private void ShowContextMenu(Vec2 pos)
