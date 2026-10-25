@@ -7,6 +7,7 @@ using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
+using PolygonEditor.Constraints;
 using PolygonEditor.Editing;
 using PolygonEditor.Geometry;
 using PolygonEditor.Model;
@@ -137,7 +138,7 @@ public sealed class EditorCanvas : Control
 
         if (_draggedVertex != null)
         {
-            _draggedVertex.Value.Vertex.Position = pos;
+            ConstraintSolver.MoveVertex(Scene, _draggedVertex.Value.Vertex, pos);
         }
         else if (_draggedPolygon != null)
         {
