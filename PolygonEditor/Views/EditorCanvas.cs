@@ -322,16 +322,23 @@ public sealed class EditorCanvas : Control
 
         var inEdge = hit.Polygon.EdgeBefore(hit.Vertex);
         var outEdge = hit.Polygon.EdgeAfter(hit.Vertex);
-        if (inEdge.Shape is BezierShape || outEdge.Shape is BezierShape)
+        bool nearArc = inEdge.Shape is ArcShape || outEdge.Shape is ArcShape;
+        if (inEdge.Shape is BezierShape || outEdge.Shape is BezierShape || nearArc)
         {
             foreach (var continuity in new[] { Continuity.G0, Continuity.G1, Continuity.C1 })
             {
+                if (nearArc && continuity == Continuity.C1) continue; // arcs: G0/G1 only
+                // Between two arcs neither can follow the other: G0 only
+                if (inEdge.Shape is ArcShape && outEdge.Shape is ArcShape && continuity != Continuity.G0)
+                    continue;
                 string mark = hit.Vertex.Continuity == continuity ? "✓ " : "";
                 var option = new MenuItem { Header = $"{mark}Continuity {continuity}" };
                 option.Click += (_, _) =>
                 {
                     hit.Vertex.Continuity = continuity;
                     hit.Vertex.ContinuityIsExplicit = true;
+                    if (continuity != Continuity.G0)
+                        KeepSingleG1(hit.Polygon, hit.Vertex);
                     ContinuitySolver.Apply(Scene);
                     InvalidateVisual();
                 };
@@ -392,8 +399,8 @@ public sealed class EditorCanvas : Control
         foreach (var polygon in Scene.Polygons)
         foreach (var v in polygon.Vertices)
         {
-            if (polygon.EdgeBefore(v).Shape is not BezierShape &&
-                polygon.EdgeAfter(v).Shape is not BezierShape)
+            if (polygon.EdgeBefore(v).Shape is LineShape &&
+                polygon.EdgeAfter(v).Shape is LineShape)
                 continue;
 
             var text = new FormattedText(v.Continuity.ToString(), CultureInfo.InvariantCulture,
@@ -434,5 +441,13 @@ public sealed class EditorCanvas : Control
             InvalidateVisual();
         };
         return item;
+    }
+    // An arc may be G1 at one end only: the opposite end of a neighbouring arc becomes G0
+    private static void KeepSingleG1(Polygon polygon, Vertex v)
+    {
+        Edge inEdge = polygon.EdgeBefore(v);
+        Edge outEdge = polygon.EdgeAfter(v);
+        if (inEdge.Shape is ArcShape) inEdge.Start.Continuity = Continuity.G0;
+        if (outEdge.Shape is ArcShape) outEdge.End.Continuity = Continuity.G0;
     }
 }

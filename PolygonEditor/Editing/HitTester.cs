@@ -45,7 +45,7 @@ public static class HitTester
     {
         foreach (Polygon polygon in scene.Polygons){
             foreach (Edge edge in polygon.Edges){
-                if (DistanceToEdge(point, edge) <= tolerance){
+                if (DistanceToEdge(point, polygon, edge) <= tolerance){
                     return new EdgeHit(polygon, edge);
                 }
             }
@@ -68,17 +68,22 @@ public static class HitTester
     }
 
     // A curve is approximated by a polyline of CurveSamples segments
-    public static double DistanceToEdge(Vec2 p, Edge edge)
+    public static double DistanceToEdge(Vec2 p, Polygon polygon, Edge edge)
     {
-        if (edge.Shape is not BezierShape bezier)
+        Func<double, Vec2>? curve = null;
+        if (edge.Shape is BezierShape b)
+            curve = t => BezierPoint(edge.Start.Position, b.Control1, b.Control2, edge.End.Position, t);
+        else if (edge.Shape is ArcShape && ArcGeometry.Compute(polygon, edge) is Arc arc)
+            curve = arc.PointAt;
+
+        if (curve == null)
             return DistanceToSegment(p, edge.Start.Position, edge.End.Position);
 
         double best = double.MaxValue;
-        Vec2 prev = edge.Start.Position;
+        Vec2 prev = curve(0);
         for (int i = 1; i <= CurveSamples; i++)
         {
-            Vec2 next = BezierPoint(edge.Start.Position, bezier.Control1, bezier.Control2,
-                edge.End.Position, (double)i / CurveSamples);
+            Vec2 next = curve((double)i / CurveSamples);
             best = Math.Min(best, DistanceToSegment(p, prev, next));
             prev = next;
         }
