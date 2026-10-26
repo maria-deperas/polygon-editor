@@ -426,6 +426,9 @@ public sealed class EditorCanvas : Control
                 foreach (var v in new[] { start, end })
                     if (!v.ContinuityIsExplicit)
                         v.Continuity = Continuity.G1;
+                // A neighbouring arc may now have G1 at both ends
+                KeepSingleG1(hit.Polygon, start);
+                KeepSingleG1(hit.Polygon, end);
             }
             else if (shape is ArcShape)
             {
@@ -445,6 +448,7 @@ public sealed class EditorCanvas : Control
     // An arc may be G1 at one end only: the opposite end of a neighbouring arc becomes G0
     private static void KeepSingleG1(Polygon polygon, Vertex v)
     {
+        if (v.Continuity == Continuity.G0) return;
         Edge inEdge = polygon.EdgeBefore(v);
         Edge outEdge = polygon.EdgeAfter(v);
         if (inEdge.Shape is ArcShape) inEdge.Start.Continuity = Continuity.G0;
