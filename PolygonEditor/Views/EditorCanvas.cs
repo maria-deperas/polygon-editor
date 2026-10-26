@@ -22,6 +22,7 @@ public sealed class EditorCanvas : Control
 {
     private const double VertexHitRadius = 8;
     private const double EdgeHitTolerance = 5;
+    private const double PointRadius = 2.5;
 
     private PixelBuffer? _buffer;
     private WriteableBitmap? _bitmap;
@@ -123,7 +124,7 @@ public sealed class EditorCanvas : Control
         foreach (var polygon in Scene.Polygons)
         {
             foreach (var vertex in polygon.Vertices)
-                context.DrawEllipse(Brushes.Black, null, ToPoint(vertex.Position), 4, 4);
+                context.DrawEllipse(Brushes.Black, null, ToPoint(vertex.Position), PointRadius, PointRadius);
         }
     }
 
@@ -265,7 +266,9 @@ public sealed class EditorCanvas : Control
             
             InvalidateVisual();
         };
-        menu.Items.Add(setLength);
+        
+        if (hit.Edge.Shape is LineShape)
+            menu.Items.Add(setLength);
         
         var makeParallel = new MenuItem { Header = "Make parallel…" };
         makeParallel.Click += (_, _) =>
@@ -362,7 +365,7 @@ public sealed class EditorCanvas : Control
                 count[edge] = n + 1;
                 Vec2 pos = edge.Midpoint + new Vec2(6, 4 + 14 * n);
                 var text = new FormattedText(label, CultureInfo.InvariantCulture,
-                    FlowDirection.LeftToRight, Typeface.Default, 12, Brushes.DarkRed);
+                    FlowDirection.LeftToRight, Typeface.Default, 12, Brushes.Red);
                 context.DrawText(text, ToPoint(pos));
             }
         }
@@ -370,7 +373,7 @@ public sealed class EditorCanvas : Control
     
     private void DrawControlPolygons(DrawingContext context)
     {
-        var dashed = new Pen(Brushes.Gray, 1, DashStyle.Dash);
+        var dashed = new Pen(Brushes.CornflowerBlue, 1, DashStyle.Dash);
 
         foreach (var polygon in Scene.Polygons)
         {
@@ -388,8 +391,8 @@ public sealed class EditorCanvas : Control
                 context.DrawLine(dashed, p1, p2);
                 context.DrawLine(dashed, p2, p3);
 
-                context.DrawEllipse(Brushes.RoyalBlue, null, p1, 4, 4);
-                context.DrawEllipse(Brushes.RoyalBlue, null, p2, 4, 4);
+                context.DrawEllipse(Brushes.RoyalBlue, null, p1, PointRadius, PointRadius);
+                context.DrawEllipse(Brushes.RoyalBlue, null, p2, PointRadius, PointRadius);
             }
         }
     }
@@ -432,12 +435,23 @@ public sealed class EditorCanvas : Control
             }
             else if (shape is ArcShape)
             {
+                // C1 is not defined for arcs: treat it as G1
+                foreach (var v in new[] { start, end })
+                    if (v.Continuity == Continuity.C1)
+                        v.Continuity = Continuity.G1;
+
                 // Arcs default to G0, and only one end may be G1
                 foreach (var v in new[] { start, end })
                     if (!v.ContinuityIsExplicit)
                         v.Continuity = Continuity.G0;
                 if (start.Continuity != Continuity.G0 && end.Continuity != Continuity.G0)
                     end.Continuity = Continuity.G0;
+
+                // Between two arcs neither can follow the other: only G0 is possible
+                foreach (var v in new[] { start, end })
+                    if (hit.Polygon.EdgeBefore(v).Shape is ArcShape &&
+                        hit.Polygon.EdgeAfter(v).Shape is ArcShape)
+                        v.Continuity = Continuity.G0;
             }
 
             ContinuitySolver.Apply(Scene);
@@ -445,7 +459,8 @@ public sealed class EditorCanvas : Control
         };
         return item;
     }
-    // An arc may be G1 at one end only: the opposite end of a neighbouring arc becomes G0
+    
+    // An arc may be G1 at one end only: the opposite end of a neighboring arc becomes G0
     private static void KeepSingleG1(Polygon polygon, Vertex v)
     {
         if (v.Continuity == Continuity.G0) return;
