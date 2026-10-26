@@ -15,5 +15,9 @@
       <IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
       <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="Markdown.Avalonia.Tight" Version="12.0.2" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Docs\Documentation.md" LogicalName="Documentation.md" />
   </ItemGroup>
 </Project>

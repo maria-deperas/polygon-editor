@@ -145,6 +145,7 @@ public sealed class EditorCanvas : Control
         {
             var target = HitTester.FindEdge(Scene, pos, EdgeHitTolerance);
             if (target != null && target.Value.Edge != _parallelSource
+                               && target.Value.Edge.Shape is LineShape
                                && !target.Value.Edge.SharesVertexWith(_parallelSource))
             {
                 var constraint = new ParallelConstraint(_parallelSource, target.Value.Edge);
@@ -276,7 +277,9 @@ public sealed class EditorCanvas : Control
             _parallelSource = hit.Edge;
             InvalidateVisual();
         };
-        menu.Items.Add(makeParallel);
+        
+        if (hit.Edge.Shape is LineShape)
+            menu.Items.Add(makeParallel);
         
         if (hit.Edge.Shape is not LineShape)
             menu.Items.Add(ShapeItem("Convert to line", hit, () => new LineShape()));
