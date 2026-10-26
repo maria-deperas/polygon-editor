@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -109,6 +110,8 @@ public sealed class EditorCanvas : Control
                 if (edge.Shape is BezierShape bezier)
                     BezierDrawer.Draw(drawer, edge.Start.Position, bezier.Control1,
                         bezier.Control2, edge.End.Position);
+                else if (edge.Shape is ArcShape && ArcGeometry.Compute(polygon, edge) is Arc arc)
+                    ArcDrawer.Draw(drawer, arc);
                 else
                     drawer.DrawLine(edge.Start.Position, edge.End.Position);
             }
@@ -272,33 +275,17 @@ public sealed class EditorCanvas : Control
         };
         menu.Items.Add(makeParallel);
         
-        bool isBezier = hit.Edge.Shape is BezierShape;
-        var toggleBezier = new MenuItem { Header = isBezier ? "Convert to line" : "Convert to Bézier" };
-        toggleBezier.Click += (_, _) =>
-        {
-            // Length/parallel constraints describe a straight segment, so drop them
-            Scene.RemoveConstraintsOf(hit.Edge);
-
-            if (isBezier)
-            {
-                hit.Edge.Shape = new LineShape();
-            }
-            else
+        if (hit.Edge.Shape is not LineShape)
+            menu.Items.Add(ShapeItem("Convert to line", hit, () => new LineShape()));
+        if (hit.Edge.Shape is not BezierShape)
+            menu.Items.Add(ShapeItem("Convert to Bézier", hit, () =>
             {
                 Vec2 start = hit.Edge.Start.Position;
                 Vec2 dir = hit.Edge.Direction;
-                hit.Edge.Shape = new BezierShape(start + dir / 3, start + dir * 2 / 3);
-            }
-            
-            // Default continuity (G1) unless the user already chose one
-            foreach (var v in new[] { hit.Edge.Start, hit.Edge.End })
-                if (!v.ContinuityIsExplicit)
-                    v.Continuity = Continuity.G1;
-            ContinuitySolver.Apply(Scene);
-            
-            InvalidateVisual();
-        };
-        menu.Items.Add(toggleBezier);
+                return new BezierShape(start + dir / 3, start + dir * 2 / 3);
+            }));
+        if (hit.Edge.Shape is not ArcShape)
+            menu.Items.Add(ShapeItem("Convert to arc", hit, () => new ArcShape()));
 
         foreach (var c in Scene.Constraints)
         {
@@ -413,5 +400,39 @@ public sealed class EditorCanvas : Control
                 FlowDirection.LeftToRight, Typeface.Default, 11, Brushes.RoyalBlue);
             context.DrawText(text, ToPoint(v.Position + new Vec2(8, -18)));
         }
+    }
+    
+    private MenuItem ShapeItem(string header, HitTester.EdgeHit hit, Func<EdgeShape> create)
+    {
+        var item = new MenuItem { Header = header };
+        item.Click += (_, _) =>
+        {
+            // Length/parallel constraints describe a straight segment, so drop them
+            Scene.RemoveConstraintsOf(hit.Edge);
+            var shape = create();
+            hit.Edge.Shape = shape;
+
+            Vertex start = hit.Edge.Start, end = hit.Edge.End;
+            if (shape is BezierShape)
+            {
+                // Default continuity (G1) unless the user already chose one
+                foreach (var v in new[] { start, end })
+                    if (!v.ContinuityIsExplicit)
+                        v.Continuity = Continuity.G1;
+            }
+            else if (shape is ArcShape)
+            {
+                // Arcs default to G0, and only one end may be G1
+                foreach (var v in new[] { start, end })
+                    if (!v.ContinuityIsExplicit)
+                        v.Continuity = Continuity.G0;
+                if (start.Continuity != Continuity.G0 && end.Continuity != Continuity.G0)
+                    end.Continuity = Continuity.G0;
+            }
+
+            ContinuitySolver.Apply(Scene);
+            InvalidateVisual();
+        };
+        return item;
     }
 }

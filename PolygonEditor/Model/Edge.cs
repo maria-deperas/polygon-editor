@@ -18,6 +18,9 @@ public sealed class Edge
     public Vec2 Direction => End.Position - Start.Position;
     public double Length => Direction.Length;
     public Vec2 Midpoint => Start.Position + Direction / 2;
+    // Tangent vectors at the ends (for a Bezier: 3(P1 - P0) and 3(P3 - P2))
+    public Vec2 TangentAtStart => Shape is BezierShape b ? 3 * (b.Control1 - Start.Position) : Direction;
+    public Vec2 TangentAtEnd => Shape is BezierShape b ? 3 * (End.Position - b.Control2) : Direction;
     
     public bool SharesVertexWith(Edge other) =>
         Start == other.Start || Start == other.End ||
