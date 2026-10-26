@@ -438,6 +438,12 @@ public sealed class EditorCanvas : Control
                         v.Continuity = Continuity.G0;
                 if (start.Continuity != Continuity.G0 && end.Continuity != Continuity.G0)
                     end.Continuity = Continuity.G0;
+                
+                // Between two arcs neither can follow the other: only G0 is possible
+                foreach (var v in new[] { start, end })
+                    if (hit.Polygon.EdgeBefore(v).Shape is ArcShape &&
+                        hit.Polygon.EdgeAfter(v).Shape is ArcShape)
+                        v.Continuity = Continuity.G0;
             }
 
             ContinuitySolver.Apply(Scene);
