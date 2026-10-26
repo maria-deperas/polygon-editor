@@ -34,13 +34,7 @@ public sealed class Polygon
             vertex.Position += delta;
 
         foreach (var edge in _edges)
-        {
-            if (edge.Shape is BezierShape bezier)
-            {
-                bezier.Control1 += delta;
-                bezier.Control2 += delta;
-            }
-        }
+            edge.Shape.FollowEnds(delta, delta);
     }
     
     // Edge i goes from vertex i to vertex i+1

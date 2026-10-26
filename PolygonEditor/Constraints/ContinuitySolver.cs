@@ -55,11 +55,8 @@ public static class ContinuitySolver
     {
         foreach (var polygon in scene.Polygons)
         foreach (var edge in polygon.Edges)
-        {
-            if (edge.Shape is not BezierShape b) continue;
-            b.Control1 += edge.Start.Position - before[edge.Start];
-            b.Control2 += edge.End.Position - before[edge.End];
-        }
+            edge.Shape.FollowEnds(edge.Start.Position - before[edge.Start],
+                edge.End.Position - before[edge.End]);
     }
 
     /// <summary>

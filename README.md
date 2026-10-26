@@ -3,7 +3,7 @@
 Computer Graphics, project 1
 
 Polygon editor with geometric constraints, cubic Bézier segments and circular arcs.
-Variant A–K: fixed length and parallel edges, default continuity G1.
+Fixed length and parallel edges, default continuity G1.
 
 ## Features
 
