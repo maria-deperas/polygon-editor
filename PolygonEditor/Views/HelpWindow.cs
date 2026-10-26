@@ -1,7 +1,6 @@
 using System.IO;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Media;
 using Markdown.Avalonia;
 
 namespace PolygonEditor.Views;
