@@ -22,6 +22,7 @@ public sealed class EditorCanvas : Control
 {
     private const double VertexHitRadius = 8;
     private const double EdgeHitTolerance = 5;
+    private const double PointRadius = 2.5;
 
     private PixelBuffer? _buffer;
     private WriteableBitmap? _bitmap;
@@ -123,7 +124,7 @@ public sealed class EditorCanvas : Control
         foreach (var polygon in Scene.Polygons)
         {
             foreach (var vertex in polygon.Vertices)
-                context.DrawEllipse(Brushes.Black, null, ToPoint(vertex.Position), 4, 4);
+                context.DrawEllipse(Brushes.Black, null, ToPoint(vertex.Position), PointRadius, PointRadius);
         }
     }
 
@@ -388,8 +389,8 @@ public sealed class EditorCanvas : Control
                 context.DrawLine(dashed, p1, p2);
                 context.DrawLine(dashed, p2, p3);
 
-                context.DrawEllipse(Brushes.RoyalBlue, null, p1, 4, 4);
-                context.DrawEllipse(Brushes.RoyalBlue, null, p2, 4, 4);
+                context.DrawEllipse(Brushes.RoyalBlue, null, p1, PointRadius, PointRadius);
+                context.DrawEllipse(Brushes.RoyalBlue, null, p2, PointRadius, PointRadius);
             }
         }
     }
