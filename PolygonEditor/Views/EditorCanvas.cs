@@ -365,7 +365,7 @@ public sealed class EditorCanvas : Control
                 count[edge] = n + 1;
                 Vec2 pos = edge.Midpoint + new Vec2(6, 4 + 14 * n);
                 var text = new FormattedText(label, CultureInfo.InvariantCulture,
-                    FlowDirection.LeftToRight, Typeface.Default, 12, Brushes.DarkRed);
+                    FlowDirection.LeftToRight, Typeface.Default, 12, Brushes.Red);
                 context.DrawText(text, ToPoint(pos));
             }
         }
@@ -373,7 +373,7 @@ public sealed class EditorCanvas : Control
     
     private void DrawControlPolygons(DrawingContext context)
     {
-        var dashed = new Pen(Brushes.Gray, 1, DashStyle.Dash);
+        var dashed = new Pen(Brushes.CornflowerBlue, 1, DashStyle.Dash);
 
         foreach (var polygon in Scene.Polygons)
         {
@@ -460,7 +460,7 @@ public sealed class EditorCanvas : Control
         return item;
     }
     
-    // An arc may be G1 at one end only: the opposite end of a neighbouring arc becomes G0
+    // An arc may be G1 at one end only: the opposite end of a neighboring arc becomes G0
     private static void KeepSingleG1(Polygon polygon, Vertex v)
     {
         if (v.Continuity == Continuity.G0) return;
