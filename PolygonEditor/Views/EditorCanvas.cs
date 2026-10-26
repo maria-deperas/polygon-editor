@@ -266,7 +266,9 @@ public sealed class EditorCanvas : Control
             
             InvalidateVisual();
         };
-        menu.Items.Add(setLength);
+        
+        if (hit.Edge.Shape is LineShape)
+            menu.Items.Add(setLength);
         
         var makeParallel = new MenuItem { Header = "Make parallel…" };
         makeParallel.Click += (_, _) =>
@@ -433,13 +435,18 @@ public sealed class EditorCanvas : Control
             }
             else if (shape is ArcShape)
             {
+                // C1 is not defined for arcs: treat it as G1
+                foreach (var v in new[] { start, end })
+                    if (v.Continuity == Continuity.C1)
+                        v.Continuity = Continuity.G1;
+
                 // Arcs default to G0, and only one end may be G1
                 foreach (var v in new[] { start, end })
                     if (!v.ContinuityIsExplicit)
                         v.Continuity = Continuity.G0;
                 if (start.Continuity != Continuity.G0 && end.Continuity != Continuity.G0)
                     end.Continuity = Continuity.G0;
-                
+
                 // Between two arcs neither can follow the other: only G0 is possible
                 foreach (var v in new[] { start, end })
                     if (hit.Polygon.EdgeBefore(v).Shape is ArcShape &&
@@ -452,6 +459,7 @@ public sealed class EditorCanvas : Control
         };
         return item;
     }
+    
     // An arc may be G1 at one end only: the opposite end of a neighbouring arc becomes G0
     private static void KeepSingleG1(Polygon polygon, Vertex v)
     {
