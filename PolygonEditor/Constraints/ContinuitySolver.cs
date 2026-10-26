@@ -10,14 +10,6 @@ namespace PolygonEditor.Constraints;
 /// </summary>
 public static class ContinuitySolver
 {
-    // Tangent vector of an edge at its end vertex (edge comes into the vertex)
-    private static Vec2 IncomingTangent(Edge e) =>
-        e.Shape is BezierShape b ? 3 * (e.End.Position - b.Control2) : e.Direction;
-
-    // Tangent vector of an edge at its start vertex (edge leaves the vertex)
-    private static Vec2 OutgoingTangent(Edge e) =>
-        e.Shape is BezierShape b ? 3 * (b.Control1 - e.Start.Position) : e.Direction;
-
     // Where a control point next to v must be so that its arm follows the tangent
     private static Vec2 Fit(Vertex v, Vec2 current, Vec2 tangent) =>
         v.Continuity == Continuity.C1
@@ -37,13 +29,15 @@ public static class ContinuitySolver
 
             Edge inEdge = polygon.EdgeBefore(v);
             Edge outEdge = polygon.EdgeAfter(v);
+            // An arc adapts to its neighbours itself (see ArcGeometry)
+            if (inEdge.Shape is ArcShape || outEdge.Shape is ArcShape) continue;
             bool outLocked = outEdge.Shape == locked && lockedIsFirst;
             bool inLocked = inEdge.Shape == locked && !lockedIsFirst;
 
             if (outEdge.Shape is BezierShape outB && !outLocked)
-                outB.Control1 = Fit(v, outB.Control1, IncomingTangent(inEdge));
+                outB.Control1 = Fit(v, outB.Control1, inEdge.TangentAtEnd);
             else if (inEdge.Shape is BezierShape inB && !inLocked)
-                inB.Control2 = Fit(v, inB.Control2, -OutgoingTangent(outEdge));
+                inB.Control2 = Fit(v, inB.Control2, -outEdge.TangentAtStart);
         }
     }
     
