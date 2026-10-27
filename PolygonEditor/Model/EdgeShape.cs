@@ -5,7 +5,7 @@ namespace PolygonEditor.Model;
 
 /// <summary>
 /// What an edge looks like between its two vertices. Switching an edge between a segment,
-/// a Bezier curve and an arc only replaces this object; vertices and constraints stay.
+/// a Bezier curve and an arc only replaces this object.
 /// </summary>
 public abstract class EdgeShape
 {
@@ -62,6 +62,7 @@ public sealed class BezierShape(Vec2 control1, Vec2 control2) : EdgeShape
         Control2 += endDelta;
     }
     
+    // Used for hit-testing only
     public override Func<double, Vec2> Curve(Polygon polygon, Edge edge)
     {
         Vec2 p0 = edge.Start.Position, p1 = Control1, p2 = Control2, p3 = edge.End.Position;
@@ -81,6 +82,7 @@ public sealed class BezierShape(Vec2 control1, Vec2 control2) : EdgeShape
         foreach (var v in new[] { edge.Start, edge.End })
             if (!v.ContinuityIsExplicit)
                 v.Continuity = Continuity.G1;
+        
         // A neighbouring arc may now have G1 at both ends
         polygon.KeepSingleG1(edge.Start);
         polygon.KeepSingleG1(edge.End);

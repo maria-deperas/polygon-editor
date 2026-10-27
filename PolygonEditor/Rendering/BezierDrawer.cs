@@ -11,7 +11,7 @@ public static class BezierDrawer
 {
     public static void Draw(ILineDrawer drawer, Vec2 p0, Vec2 p1, Vec2 p2, Vec2 p3)
     {
-        // Power basis: P(t) = A t^3 + B t^2 + C t + D
+        // P(t) = A t^3 + B t^2 + C t + D
         Vec2 a = -p0 + 3 * p1 - 3 * p2 + p3;
         Vec2 b = 3 * p0 - 6 * p1 + 3 * p2;
         Vec2 c = 3 * (p1 - p0);

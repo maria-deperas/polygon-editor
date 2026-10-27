@@ -4,6 +4,7 @@ using PolygonEditor.Geometry;
 
 namespace PolygonEditor.Rendering;
 
+/// <summary>Draws segments with Avalonia's built-in DrawLine.</summary>
 public sealed class LibraryLineDrawer (DrawingContext context) : ILineDrawer
 {
     private static readonly Pen EdgePen = new(Brushes.Black, 1);

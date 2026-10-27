@@ -5,6 +5,7 @@ using PolygonEditor.Model;
 
 namespace PolygonEditor.Constraints;
 
+/// <summary>Keeps two edges parallel (possibly in different polygons).</summary>
 public sealed class ParallelConstraint(Edge first, Edge second) : Constraint
 {
     public Edge First { get; } = first;

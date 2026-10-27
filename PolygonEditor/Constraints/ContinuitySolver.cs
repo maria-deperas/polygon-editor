@@ -16,10 +16,7 @@ public static class ContinuitySolver
             ? v.Position + tangent / 3
             : v.Position + tangent.Normalized() * (current - v.Position).Length;
 
-    /// <summary>
-    /// Enforces continuity at every vertex. The locked control point (the one the user
-    /// is dragging) is never moved; the control point on the other side is fitted instead.
-    /// </summary>
+    // Enforces continuity at every vertex.
     public static void Apply(Scene scene, BezierShape? locked = null, bool lockedIsFirst = false)
     {
         foreach (var polygon in scene.Polygons)
@@ -29,6 +26,7 @@ public static class ContinuitySolver
 
             Edge inEdge = polygon.EdgeBefore(v);
             Edge outEdge = polygon.EdgeAfter(v);
+            
             // An arc adapts to its neighbours itself (see ArcGeometry)
             if (inEdge.Shape.AdaptsToNeighbours || outEdge.Shape.AdaptsToNeighbours) continue;
             bool outLocked = outEdge.Shape == locked && lockedIsFirst;
@@ -41,6 +39,7 @@ public static class ContinuitySolver
         }
     }
     
+    // Vertex positions before a move, so FollowVertices can tell how far each vertex went
     public static Dictionary<Vertex, Vec2> Snapshot(Scene scene)
     {
         var positions = new Dictionary<Vertex, Vec2>();
@@ -59,10 +58,7 @@ public static class ContinuitySolver
                 edge.End.Position - before[edge.End]);
     }
 
-    /// <summary>
-    /// Moves a control point to the target. If the other side of its vertex is a line
-    /// segment, the segment's far vertex is moved so that continuity still holds.
-    /// </summary>
+    // Moves a control point to the target. 
     public static void MoveControlPoint(Scene scene, Polygon polygon, Edge edge,
         BezierShape bezier, bool isFirst, Vec2 target)
     {

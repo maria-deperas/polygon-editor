@@ -4,6 +4,8 @@ using PolygonEditor.Constraints;
 
 namespace PolygonEditor.Model;
 
+/// <summary>Everything on the canvas: polygons and the constraints between their edges.
+/// Operations that change edges also keep the constraint list consistent.</summary>
 public sealed class Scene
 {
     public List<Polygon> Polygons { get; } = [];
@@ -38,7 +40,7 @@ public sealed class Scene
         return false;
     }
 
-    // An edge has at most one fixed length: the new value replaces the old one, which comes back on failure
+    // An edge has at most one fixed length
     public bool SetFixedLength(Edge edge, double length)
     {
         var old = Constraints.OfType<FixedLengthConstraint>().FirstOrDefault(f => f.Edge == edge);

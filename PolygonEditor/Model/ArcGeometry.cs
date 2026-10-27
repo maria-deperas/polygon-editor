@@ -6,7 +6,7 @@ namespace PolygonEditor.Model;
 /// <summary>Computes the circle of an arc edge from its vertices and their continuity.</summary>
 public static class ArcGeometry
 {
-    /// <returns>The arc, or null when it degenerates to a straight segment.</returns>
+    // Returns the arc, or null when it degenerates to a straight segment.
     public static Arc? Compute(Polygon polygon, Edge edge)
     {
         Vec2 a = edge.Start.Position;
