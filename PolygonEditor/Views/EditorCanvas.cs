@@ -148,10 +148,7 @@ public sealed class EditorCanvas : Control
                                && target.Value.Edge.Shape.IsStraight
                                && !target.Value.Edge.SharesVertexWith(_parallelSource))
             {
-                var constraint = new ParallelConstraint(_parallelSource, target.Value.Edge);
-                Scene.Constraints.Add(constraint);
-                if (!ConstraintSolver.Solve(Scene, null))
-                    Scene.Constraints.Remove(constraint);
+                Scene.TryAddConstraint(new ParallelConstraint(_parallelSource, target.Value.Edge));
             }
             _parallelSource = null;
             InvalidateVisual();
@@ -235,8 +232,7 @@ public sealed class EditorCanvas : Control
         var item = new MenuItem { Header = "Add vertex" };
         item.Click += (_, _) =>
         {
-            Scene.RemoveConstraintsOf(hit.Edge);
-            hit.Polygon.SplitEdge(hit.Edge);
+            Scene.SplitEdge(hit.Polygon, hit.Edge);
             InvalidateVisual();
         };
         var menu = new ContextMenu();
@@ -249,21 +245,7 @@ public sealed class EditorCanvas : Control
             double? length = await new LengthDialog(hit.Edge.Length).ShowDialog<double?>(owner);
             if (length == null) return;
 
-            var old = Scene.Constraints.OfType<FixedLengthConstraint>()
-                .FirstOrDefault(f => f.Edge == hit.Edge);
-            if (old != null)
-                Scene.Constraints.Remove(old);
-
-            var constraint = new FixedLengthConstraint(hit.Edge, length.Value);
-            Scene.Constraints.Add(constraint);
-
-            if (!ConstraintSolver.Solve(Scene, null))
-            {
-                // Impossible length: undo
-                Scene.Constraints.Remove(constraint);
-                if (old != null)
-                    Scene.Constraints.Add(old);
-            }
+            Scene.SetFixedLength(hit.Edge, length.Value);
             
             InvalidateVisual();
         };
@@ -316,12 +298,7 @@ public sealed class EditorCanvas : Control
         item.IsEnabled = hit.Polygon.Vertices.Count > 3;
         item.Click += (_, _) =>
         {
-            var touching = hit.Polygon.Edges
-                .Where(e => e.Start == hit.Vertex || e.End == hit.Vertex)
-                .ToList();
-            foreach (var edge in touching)
-                Scene.RemoveConstraintsOf(edge);
-            hit.Polygon.RemoveVertex(hit.Vertex);
+            Scene.RemoveVertex(hit.Polygon, hit.Vertex);
             InvalidateVisual();
         };
         var menu = new ContextMenu { Items = { item } };
