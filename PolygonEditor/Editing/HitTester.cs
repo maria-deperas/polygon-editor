@@ -70,14 +70,7 @@ public static class HitTester
     // A curve is approximated by a polyline of CurveSamples segments
     public static double DistanceToEdge(Vec2 p, Polygon polygon, Edge edge)
     {
-        Func<double, Vec2>? curve = null;
-        if (edge.Shape is BezierShape b)
-            curve = t => BezierPoint(edge.Start.Position, b.Control1, b.Control2, edge.End.Position, t);
-        else if (edge.Shape is ArcShape && ArcGeometry.Compute(polygon, edge) is Arc arc)
-            curve = arc.PointAt;
-
-        if (curve == null)
-            return DistanceToSegment(p, edge.Start.Position, edge.End.Position);
+        Func<double, Vec2> curve = edge.Shape.Curve(polygon, edge);
 
         double best = double.MaxValue;
         Vec2 prev = curve(0);
@@ -88,12 +81,5 @@ public static class HitTester
             prev = next;
         }
         return best;
-    }
-
-    // Bernstein form of a cubic Bezier
-    public static Vec2 BezierPoint(Vec2 p0, Vec2 p1, Vec2 p2, Vec2 p3, double t)
-    {
-        double u = 1 - t;
-        return u * u * u * p0 + 3 * u * u * t * p1 + 3 * u * t * t * p2 + t * t * t * p3;
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using PolygonEditor.Geometry;
 
 namespace PolygonEditor.Model;
@@ -14,6 +15,15 @@ public abstract class EdgeShape
 
     // Called after the edge's vertices moved by startDelta and endDelta
     public virtual void FollowEnds(Vec2 startDelta, Vec2 endDelta) { }
+    
+    // Parametric curve of the edge, t in [0, 1]. The polygon is needed
+    // because an arc depends on its neighbouring edges.
+    public virtual Func<double, Vec2> Curve(Polygon polygon, Edge edge)
+    {
+        Vec2 a = edge.Start.Position;
+        Vec2 d = edge.Direction;
+        return t => a + d * t;
+    }
 }
 
 /// <summary>A straight line segment.</summary>
@@ -35,7 +45,25 @@ public sealed class BezierShape(Vec2 control1, Vec2 control2) : EdgeShape
         Control1 += startDelta;
         Control2 += endDelta;
     }
+    
+    public override Func<double, Vec2> Curve(Polygon polygon, Edge edge)
+    {
+        Vec2 p0 = edge.Start.Position, p1 = Control1, p2 = Control2, p3 = edge.End.Position;
+        return t => PointAt(p0, p1, p2, p3, t);
+    }
+
+    // Bernstein form of a cubic Bezier
+    public static Vec2 PointAt(Vec2 p0, Vec2 p1, Vec2 p2, Vec2 p3, double t)
+    {
+        double u = 1 - t;
+        return u * u * u * p0 + 3 * u * u * t * p1 + 3 * u * t * t * p2 + t * t * t * p3;
+    }
 }
 
 /// <summary>Circular arc between the edge's vertices.</summary>
-public sealed class ArcShape : EdgeShape;
+public sealed class ArcShape : EdgeShape
+{
+    // A degenerate arc (null) is drawn and hit-tested as a straight segment
+    public override Func<double, Vec2> Curve(Polygon polygon, Edge edge) =>
+        ArcGeometry.Compute(polygon, edge) is Arc arc ? arc.PointAt : base.Curve(polygon, edge);
+}
