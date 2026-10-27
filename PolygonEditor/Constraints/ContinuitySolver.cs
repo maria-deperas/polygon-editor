@@ -30,7 +30,7 @@ public static class ContinuitySolver
             Edge inEdge = polygon.EdgeBefore(v);
             Edge outEdge = polygon.EdgeAfter(v);
             // An arc adapts to its neighbours itself (see ArcGeometry)
-            if (inEdge.Shape is ArcShape || outEdge.Shape is ArcShape) continue;
+            if (inEdge.Shape.AdaptsToNeighbours || outEdge.Shape.AdaptsToNeighbours) continue;
             bool outLocked = outEdge.Shape == locked && lockedIsFirst;
             bool inLocked = inEdge.Shape == locked && !lockedIsFirst;
 
@@ -69,7 +69,7 @@ public static class ContinuitySolver
         Vertex v = isFirst ? edge.Start : edge.End;
         Edge other = isFirst ? polygon.EdgeBefore(v) : polygon.EdgeAfter(v);
 
-        if (v.Continuity != Continuity.G0 && other.Shape is LineShape)
+        if (v.Continuity != Continuity.G0 && other.Shape.IsStraight)
         {
             Vertex far = isFirst ? other.Start : other.End;
             Vec2 arm = target - v.Position; // from the vertex towards the control point

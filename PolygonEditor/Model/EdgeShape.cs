@@ -24,10 +24,23 @@ public abstract class EdgeShape
         Vec2 d = edge.Direction;
         return t => a + d * t;
     }
+    
+    // Straight segment: length/parallel constraints apply, no continuity label
+    public virtual bool IsStraight => false;
+
+    // The shape bends itself to fit its neighbours' tangents (an arc),
+    // so a neighbour must not try to follow it
+    public virtual bool AdaptsToNeighbours => false;
+
+    // Highest continuity this shape can keep at its ends
+    public virtual Continuity MaxContinuity => Continuity.C1;
 }
 
 /// <summary>A straight line segment.</summary>
-public sealed class LineShape : EdgeShape;
+public sealed class LineShape : EdgeShape
+{
+    public override bool IsStraight => true;
+}
 
 /// <summary>Cubic Bezier segment: Start, Control1, Control2, End.</summary>
 public sealed class BezierShape(Vec2 control1, Vec2 control2) : EdgeShape
@@ -66,4 +79,7 @@ public sealed class ArcShape : EdgeShape
     // A degenerate arc (null) is drawn and hit-tested as a straight segment
     public override Func<double, Vec2> Curve(Polygon polygon, Edge edge) =>
         ArcGeometry.Compute(polygon, edge) is Arc arc ? arc.PointAt : base.Curve(polygon, edge);
+    
+    public override bool AdaptsToNeighbours => true;
+    public override Continuity MaxContinuity => Continuity.G1;
 }

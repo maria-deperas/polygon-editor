@@ -60,6 +60,20 @@ public sealed class Polygon
 
         return newVertex;
     }
+    
+    // A vertex has a continuity setting only if a curve meets there
+    public bool IsCurvedAt(Vertex v) =>
+        !EdgeBefore(v).Shape.IsStraight || !EdgeAfter(v).Shape.IsStraight;
+
+    public bool AllowsContinuity(Vertex v, Continuity c)
+    {
+        EdgeShape before = EdgeBefore(v).Shape;
+        EdgeShape after = EdgeAfter(v).Shape;
+        // Between two arcs neither can follow the other: G0 only
+        if (before.AdaptsToNeighbours && after.AdaptsToNeighbours)
+            return c == Continuity.G0;
+        return c <= before.MaxContinuity && c <= after.MaxContinuity;
+    }
 
     public bool RemoveVertex(Vertex vertex)
     {
