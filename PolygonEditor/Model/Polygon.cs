@@ -101,4 +101,14 @@ public sealed class Polygon
 
         return true;
     }
+    
+    // An arc may be G1 at one end only: the opposite end of a neighbouring arc becomes G0
+    public void KeepSingleG1(Vertex v)
+    {
+        if (v.Continuity == Continuity.G0) return;
+        Edge inEdge = EdgeBefore(v);
+        Edge outEdge = EdgeAfter(v);
+        if (inEdge.Shape.AdaptsToNeighbours) inEdge.Start.Continuity = Continuity.G0;
+        if (outEdge.Shape.AdaptsToNeighbours) outEdge.End.Continuity = Continuity.G0;
+    }
 }

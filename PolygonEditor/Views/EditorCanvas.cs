@@ -338,7 +338,7 @@ public sealed class EditorCanvas : Control
                     hit.Vertex.Continuity = continuity;
                     hit.Vertex.ContinuityIsExplicit = true;
                     if (continuity != Continuity.G0)
-                        KeepSingleG1(hit.Polygon, hit.Vertex);
+                        hit.Polygon.KeepSingleG1(hit.Vertex);
                     ContinuitySolver.Apply(Scene);
                     InvalidateVisual();
                 };
@@ -418,51 +418,11 @@ public sealed class EditorCanvas : Control
             var shape = create();
             hit.Edge.Shape = shape;
 
-            Vertex start = hit.Edge.Start, end = hit.Edge.End;
-            if (shape is BezierShape)
-            {
-                // Default continuity (G1) unless the user already chose one
-                foreach (var v in new[] { start, end })
-                    if (!v.ContinuityIsExplicit)
-                        v.Continuity = Continuity.G1;
-                // A neighbouring arc may now have G1 at both ends
-                KeepSingleG1(hit.Polygon, start);
-                KeepSingleG1(hit.Polygon, end);
-            }
-            else if (shape is ArcShape)
-            {
-                // C1 is not defined for arcs: treat it as G1
-                foreach (var v in new[] { start, end })
-                    if (v.Continuity == Continuity.C1)
-                        v.Continuity = Continuity.G1;
-
-                // Arcs default to G0, and only one end may be G1
-                foreach (var v in new[] { start, end })
-                    if (!v.ContinuityIsExplicit)
-                        v.Continuity = Continuity.G0;
-                if (start.Continuity != Continuity.G0 && end.Continuity != Continuity.G0)
-                    end.Continuity = Continuity.G0;
-
-                // Between two arcs neither can follow the other: only G0 is possible
-                foreach (var v in new[] { start, end })
-                    if (hit.Polygon.EdgeBefore(v).Shape is ArcShape &&
-                        hit.Polygon.EdgeAfter(v).Shape is ArcShape)
-                        v.Continuity = Continuity.G0;
-            }
-
+            shape.ApplyDefaultContinuity(hit.Polygon, hit.Edge);
+            
             ContinuitySolver.Apply(Scene);
             InvalidateVisual();
         };
         return item;
-    }
-    
-    // An arc may be G1 at one end only: the opposite end of a neighboring arc becomes G0
-    private static void KeepSingleG1(Polygon polygon, Vertex v)
-    {
-        if (v.Continuity == Continuity.G0) return;
-        Edge inEdge = polygon.EdgeBefore(v);
-        Edge outEdge = polygon.EdgeAfter(v);
-        if (inEdge.Shape.AdaptsToNeighbours) inEdge.Start.Continuity = Continuity.G0;
-        if (outEdge.Shape.AdaptsToNeighbours) outEdge.End.Continuity = Continuity.G0;
     }
 }

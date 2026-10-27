@@ -34,6 +34,9 @@ public abstract class EdgeShape
 
     // Highest continuity this shape can keep at its ends
     public virtual Continuity MaxContinuity => Continuity.C1;
+    
+    // Sets the continuity at the edge's ends right after the edge got this shape
+    public virtual void ApplyDefaultContinuity(Polygon polygon, Edge edge) { }
 }
 
 /// <summary>A straight line segment.</summary>
@@ -71,6 +74,17 @@ public sealed class BezierShape(Vec2 control1, Vec2 control2) : EdgeShape
         double u = 1 - t;
         return u * u * u * p0 + 3 * u * u * t * p1 + 3 * u * t * t * p2 + t * t * t * p3;
     }
+    
+    public override void ApplyDefaultContinuity(Polygon polygon, Edge edge)
+    {
+        // G1 unless the user already chose a continuity
+        foreach (var v in new[] { edge.Start, edge.End })
+            if (!v.ContinuityIsExplicit)
+                v.Continuity = Continuity.G1;
+        // A neighbouring arc may now have G1 at both ends
+        polygon.KeepSingleG1(edge.Start);
+        polygon.KeepSingleG1(edge.End);
+    }
 }
 
 /// <summary>Circular arc between the edge's vertices.</summary>
@@ -82,4 +96,23 @@ public sealed class ArcShape : EdgeShape
     
     public override bool AdaptsToNeighbours => true;
     public override Continuity MaxContinuity => Continuity.G1;
+    
+    public override void ApplyDefaultContinuity(Polygon polygon, Edge edge)
+    {
+        Vertex start = edge.Start, end = edge.End;
+        foreach (var v in new[] { start, end })
+        {
+            // C1 is not defined for arcs: treat it as G1
+            if (v.Continuity == Continuity.C1) v.Continuity = Continuity.G1;
+            // Arcs default to G0
+            if (!v.ContinuityIsExplicit) v.Continuity = Continuity.G0;
+        }
+        // Only one end may be G1
+        if (start.Continuity != Continuity.G0 && end.Continuity != Continuity.G0)
+            end.Continuity = Continuity.G0;
+        // Between two arcs only G0 is possible
+        foreach (var v in new[] { start, end })
+            if (!polygon.AllowsContinuity(v, Continuity.G1))
+                v.Continuity = Continuity.G0;
+    }
 }
