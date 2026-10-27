@@ -193,10 +193,14 @@ Wektory styczne na końcach krawędzi (`EdgeShape.TangentAtStart` / `TangentAtEn
 
 ### 4.5 Odcinek Bresenhama (`BresenhamLineDrawer`)
 
-Całkowitoliczbowy algorytm punktu środkowego dla wszystkich oktantów: `dx = |x1 - x0|`,
-`dy = -|y1 - y0|`, błąd `err = dx + dy`. W każdym kroku stawiany jest piksel i zależnie od
-`2·err` zwiększane jest x i/lub y, a błąd aktualizowany. Piksele trafiają do `PixelBuffer`,
-który jest kopiowany do bitmapy.
+Algorytm punktu środkowego z wykładu (`MidpointLine`), rozszerzony na wszystkie oktanty.
+Dla linii łagodnej (`|dx| ≥ |dy|`) x zmienia się w każdym kroku, a o y decyduje znak
+`d = 2·F(M)`, gdzie M to środek między kandydatami E i NE: start `d = 2dy - dx`,
+po E `d += incrE = 2dy`, po NE `d += incrNE = 2(dy - dx)` i y przesuwa się o 1.
+Liczymy na `|dx|`, `|dy|`, a kierunek kroku dają `sx`, `sy` = ±1. Linia stroma
+(`|dy| > |dx|`) to ta sama konstrukcja z zamienionymi rolami x i y. Same liczby
+całkowite, jedno porównanie i jedno dodawanie na piksel. Piksele trafiają do
+`PixelBuffer`, który jest kopiowany do bitmapy.
 
 ### 4.6 Trafianie myszą (`HitTester`)
 

@@ -4,6 +4,7 @@ using PolygonEditor.Geometry;
 
 namespace PolygonEditor.Model;
 
+/// <summary>Closed polygon: edge i goes from vertex i to vertex i+1, the last edge closes it.</summary>
 public sealed class Polygon
 {
     private readonly List<Vertex> _vertices = [];
@@ -28,6 +29,7 @@ public sealed class Polygon
         }
     }
 
+    // moves all vertices by a distance of delta
     public void Translate(Vec2 delta)
     {
         foreach (var vertex in _vertices)
@@ -37,7 +39,6 @@ public sealed class Polygon
             edge.Shape.FollowEnds(delta, delta);
     }
     
-    // Edge i goes from vertex i to vertex i+1
     public Edge EdgeBefore(Vertex v)
     {
         int n = _edges.Count;
@@ -46,6 +47,7 @@ public sealed class Polygon
 
     public Edge EdgeAfter(Vertex v) => _edges[_vertices.IndexOf(v)];
     
+    // Adding a new vertex at the midpoint
     public Vertex SplitEdge(Edge edge)
     {
         int i = _edges.IndexOf(edge);

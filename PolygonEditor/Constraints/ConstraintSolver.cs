@@ -5,10 +5,12 @@ using PolygonEditor.Model;
 
 namespace PolygonEditor.Constraints;
 
+/// <summary>Satisfies all constraints by repeatedly projecting them one by one.</summary>
 public static class ConstraintSolver
 {
     private const int MaxIterations = 100;
     
+    // sets the vertex to the cursor's position
     public static bool MoveVertex(Scene scene, Vertex vertex, Vec2 target)
     {
         Vec2 old = vertex.Position;

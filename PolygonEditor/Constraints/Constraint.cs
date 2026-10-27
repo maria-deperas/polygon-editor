@@ -3,6 +3,7 @@ using PolygonEditor.Model;
 
 namespace PolygonEditor.Constraints;
 
+/// <summary>Geometric relation on one or more edges that the ConstraintSolver keeps satisfied.</summary>
 public abstract class Constraint
 {
     public abstract IReadOnlyList<Edge> Edges { get; }
