@@ -78,7 +78,9 @@ To okno można w każdej chwili otworzyć przyciskiem „Help”.
 - `Vec2` – niemutowalny wektor 2D ze zwykłymi operatorami, `Dot`, `Cross`, `Length`, `Normalized`.
 - `Scene` – lista wielokątów (`Polygon`) i lista ograniczeń (`Constraint`). Ograniczenia
   należą do sceny, a nie do wielokąta, bo równoległość może łączyć krawędzie dwóch różnych
-  wielokątów.
+  wielokątów. Operacje: `TryAddConstraint` i `SetFixedLength` (ograniczenie niemożliwe do spełnienia jest
+  wycofywane, a stara długość krawędzi wraca) oraz `SplitEdge`/`RemoveVertex`, które usuwają
+  ograniczenia zmienionych krawędzi. Widok wywołuje tylko te metody.
 - `Polygon` – uporządkowane listy `Vertex` i `Edge`; krawędź i prowadzi od wierzchołka i
   do i+1 (ostatnia krawędź zamyka wielokąt). Samoprzecięcia są dozwolone.
   Operacje: `Translate`, `SplitEdge`, `RemoveVertex`, `EdgeBefore`, `EdgeAfter`.
