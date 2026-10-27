@@ -4,6 +4,7 @@ using Avalonia.Layout;
 
 namespace PolygonEditor.Views;
 
+/// <summary>Modal dialog asking for an edge length; returns null when cancelled.</summary>
 public sealed class LengthDialog : Window
 {
     private readonly TextBox _input;

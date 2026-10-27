@@ -10,7 +10,7 @@
             <RadioButton x:Name="BresenhamRadio" GroupName="Algorithm" Content="Bresenham Algorithm"
                          IsCheckedChanged="OnBresenhamChanged" />
             <Button Content="Help" Click="OnHelpClick" />
-        </StackPanel>
+        </StackPanel>         
         <views:EditorCanvas x:Name="Editor" />
     </DockPanel>
 </Window>

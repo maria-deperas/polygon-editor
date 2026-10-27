@@ -18,6 +18,7 @@ using PolygonEditor.Rendering;
 
 namespace PolygonEditor.Views;
 
+/// <summary>Draws the scene and turns mouse input into edits of the model.</summary>
 public sealed class EditorCanvas : Control
 {
     private const double VertexHitRadius = 8;
