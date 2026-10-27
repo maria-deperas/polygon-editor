@@ -34,13 +34,7 @@ public sealed class Polygon
             vertex.Position += delta;
 
         foreach (var edge in _edges)
-        {
-            if (edge.Shape is BezierShape bezier)
-            {
-                bezier.Control1 += delta;
-                bezier.Control2 += delta;
-            }
-        }
+            edge.Shape.FollowEnds(delta, delta);
     }
     
     // Edge i goes from vertex i to vertex i+1
@@ -65,6 +59,20 @@ public sealed class Polygon
         _edges.Insert(i + 1, second);
 
         return newVertex;
+    }
+    
+    // A vertex has a continuity setting only if a curve meets there
+    public bool IsCurvedAt(Vertex v) =>
+        !EdgeBefore(v).Shape.IsStraight || !EdgeAfter(v).Shape.IsStraight;
+
+    public bool AllowsContinuity(Vertex v, Continuity c)
+    {
+        EdgeShape before = EdgeBefore(v).Shape;
+        EdgeShape after = EdgeAfter(v).Shape;
+        // Between two arcs neither can follow the other: G0 only
+        if (before.AdaptsToNeighbours && after.AdaptsToNeighbours)
+            return c == Continuity.G0;
+        return c <= before.MaxContinuity && c <= after.MaxContinuity;
     }
 
     public bool RemoveVertex(Vertex vertex)
@@ -92,5 +100,15 @@ public sealed class Polygon
         }
 
         return true;
+    }
+    
+    // An arc may be G1 at one end only: the opposite end of a neighbouring arc becomes G0
+    public void KeepSingleG1(Vertex v)
+    {
+        if (v.Continuity == Continuity.G0) return;
+        Edge inEdge = EdgeBefore(v);
+        Edge outEdge = EdgeAfter(v);
+        if (inEdge.Shape.AdaptsToNeighbours) inEdge.Start.Continuity = Continuity.G0;
+        if (outEdge.Shape.AdaptsToNeighbours) outEdge.End.Continuity = Continuity.G0;
     }
 }

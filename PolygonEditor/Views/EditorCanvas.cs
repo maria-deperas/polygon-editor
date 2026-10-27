@@ -145,7 +145,7 @@ public sealed class EditorCanvas : Control
         {
             var target = HitTester.FindEdge(Scene, pos, EdgeHitTolerance);
             if (target != null && target.Value.Edge != _parallelSource
-                               && target.Value.Edge.Shape is LineShape
+                               && target.Value.Edge.Shape.IsStraight
                                && !target.Value.Edge.SharesVertexWith(_parallelSource))
             {
                 var constraint = new ParallelConstraint(_parallelSource, target.Value.Edge);
@@ -268,7 +268,7 @@ public sealed class EditorCanvas : Control
             InvalidateVisual();
         };
         
-        if (hit.Edge.Shape is LineShape)
+        if (hit.Edge.Shape.IsStraight)
             menu.Items.Add(setLength);
         
         var makeParallel = new MenuItem { Header = "Make parallel…" };
@@ -278,10 +278,10 @@ public sealed class EditorCanvas : Control
             InvalidateVisual();
         };
         
-        if (hit.Edge.Shape is LineShape)
+        if (hit.Edge.Shape.IsStraight)
             menu.Items.Add(makeParallel);
         
-        if (hit.Edge.Shape is not LineShape)
+        if (!hit.Edge.Shape.IsStraight)
             menu.Items.Add(ShapeItem("Convert to line", hit, () => new LineShape()));
         if (hit.Edge.Shape is not BezierShape)
             menu.Items.Add(ShapeItem("Convert to Bézier", hit, () =>
@@ -325,18 +325,12 @@ public sealed class EditorCanvas : Control
             InvalidateVisual();
         };
         var menu = new ContextMenu { Items = { item } };
-
-        var inEdge = hit.Polygon.EdgeBefore(hit.Vertex);
-        var outEdge = hit.Polygon.EdgeAfter(hit.Vertex);
-        bool nearArc = inEdge.Shape is ArcShape || outEdge.Shape is ArcShape;
-        if (inEdge.Shape is BezierShape || outEdge.Shape is BezierShape || nearArc)
+        
+        if (hit.Polygon.IsCurvedAt(hit.Vertex))
         {
             foreach (var continuity in new[] { Continuity.G0, Continuity.G1, Continuity.C1 })
             {
-                if (nearArc && continuity == Continuity.C1) continue; // arcs: G0/G1 only
-                // Between two arcs neither can follow the other: G0 only
-                if (inEdge.Shape is ArcShape && outEdge.Shape is ArcShape && continuity != Continuity.G0)
-                    continue;
+                if (!hit.Polygon.AllowsContinuity(hit.Vertex, continuity)) continue;
                 string mark = hit.Vertex.Continuity == continuity ? "✓ " : "";
                 var option = new MenuItem { Header = $"{mark}Continuity {continuity}" };
                 option.Click += (_, _) =>
@@ -344,7 +338,7 @@ public sealed class EditorCanvas : Control
                     hit.Vertex.Continuity = continuity;
                     hit.Vertex.ContinuityIsExplicit = true;
                     if (continuity != Continuity.G0)
-                        KeepSingleG1(hit.Polygon, hit.Vertex);
+                        hit.Polygon.KeepSingleG1(hit.Vertex);
                     ContinuitySolver.Apply(Scene);
                     InvalidateVisual();
                 };
@@ -405,8 +399,7 @@ public sealed class EditorCanvas : Control
         foreach (var polygon in Scene.Polygons)
         foreach (var v in polygon.Vertices)
         {
-            if (polygon.EdgeBefore(v).Shape is LineShape &&
-                polygon.EdgeAfter(v).Shape is LineShape)
+            if (!polygon.IsCurvedAt(v))
                 continue;
 
             var text = new FormattedText(v.Continuity.ToString(), CultureInfo.InvariantCulture,
@@ -425,51 +418,11 @@ public sealed class EditorCanvas : Control
             var shape = create();
             hit.Edge.Shape = shape;
 
-            Vertex start = hit.Edge.Start, end = hit.Edge.End;
-            if (shape is BezierShape)
-            {
-                // Default continuity (G1) unless the user already chose one
-                foreach (var v in new[] { start, end })
-                    if (!v.ContinuityIsExplicit)
-                        v.Continuity = Continuity.G1;
-                // A neighbouring arc may now have G1 at both ends
-                KeepSingleG1(hit.Polygon, start);
-                KeepSingleG1(hit.Polygon, end);
-            }
-            else if (shape is ArcShape)
-            {
-                // C1 is not defined for arcs: treat it as G1
-                foreach (var v in new[] { start, end })
-                    if (v.Continuity == Continuity.C1)
-                        v.Continuity = Continuity.G1;
-
-                // Arcs default to G0, and only one end may be G1
-                foreach (var v in new[] { start, end })
-                    if (!v.ContinuityIsExplicit)
-                        v.Continuity = Continuity.G0;
-                if (start.Continuity != Continuity.G0 && end.Continuity != Continuity.G0)
-                    end.Continuity = Continuity.G0;
-
-                // Between two arcs neither can follow the other: only G0 is possible
-                foreach (var v in new[] { start, end })
-                    if (hit.Polygon.EdgeBefore(v).Shape is ArcShape &&
-                        hit.Polygon.EdgeAfter(v).Shape is ArcShape)
-                        v.Continuity = Continuity.G0;
-            }
-
+            shape.ApplyDefaultContinuity(hit.Polygon, hit.Edge);
+            
             ContinuitySolver.Apply(Scene);
             InvalidateVisual();
         };
         return item;
-    }
-    
-    // An arc may be G1 at one end only: the opposite end of a neighboring arc becomes G0
-    private static void KeepSingleG1(Polygon polygon, Vertex v)
-    {
-        if (v.Continuity == Continuity.G0) return;
-        Edge inEdge = polygon.EdgeBefore(v);
-        Edge outEdge = polygon.EdgeAfter(v);
-        if (inEdge.Shape is ArcShape) inEdge.Start.Continuity = Continuity.G0;
-        if (outEdge.Shape is ArcShape) outEdge.End.Continuity = Continuity.G0;
     }
 }

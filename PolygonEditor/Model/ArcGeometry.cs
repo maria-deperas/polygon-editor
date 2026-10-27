@@ -14,12 +14,12 @@ public static class ArcGeometry
 
         // G1 at the start: leave A along the tangent of the edge before
         Edge before = polygon.EdgeBefore(edge.Start);
-        if (edge.Start.Continuity != Continuity.G0 && before.Shape is not ArcShape)
+        if (edge.Start.Continuity != Continuity.G0 && !before.Shape.AdaptsToNeighbours)
             return Tangent(a, b, before.TangentAtEnd);
 
         // G1 at the end: the same construction started from B, going backwards
         Edge after = polygon.EdgeAfter(edge.End);
-        if (edge.End.Continuity != Continuity.G0 && after.Shape is not ArcShape)
+        if (edge.End.Continuity != Continuity.G0 && !after.Shape.AdaptsToNeighbours)
             return Tangent(b, a, -after.TangentAtStart);
 
         // G0 at both ends: half circle, radius = half of the edge length

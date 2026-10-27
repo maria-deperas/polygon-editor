@@ -1,176 +1,204 @@
-# Polygon Editor – Documentation
+# Edytor wielokątów – dokumentacja
 
-Click the "Help" button to open this window at any time.
+To okno można w każdej chwili otworzyć przyciskiem „Help”.
 
-## 1. User guide
+## 1. Instrukcja obsługi
 
-### Mouse
+### Mysz
 
-- Left button + drag on a vertex: moves the vertex. Constraints and continuity are kept;
-  other vertices and control points move if needed. If the constraints cannot be satisfied
-  for the new position, the whole polygon is moved instead, so the vertex always stays
-  under the cursor.
-- Left button + drag on a Bézier control point (blue point): moves the control point.
-  Its own segment's vertices stay in place; a neighbouring line segment may rotate or
-  stretch to keep G1/C1 continuity.
-- Left button + drag on an edge: moves the whole polygon.
-- Right button on an edge: edge menu.
-    - Add vertex – inserts a vertex in the middle of the edge.
-    - Set length… – fixed length constraint (line segments only). The dialog shows the
-      current length as the default value.
-    - Make parallel… – then left-click a second edge (in any polygon) to make the two
-      edges parallel. The first edge is highlighted in orange while waiting.
-      A right click cancels the selection.
-    - Convert to line / Convert to Bézier / Convert to arc – changes the edge shape.
-    - Remove L=…/Remove ∥n – removes a constraint of this edge.
-- Right button on a vertex: vertex menu.
-    - Delete vertex – disabled when the polygon has only 3 vertices.
-    - Continuity G0 / G1 / C1 – shown only when the vertex touches a Bézier segment
-      or an arc. The current value is marked with ✓.
+- Lewy przycisk + przeciąganie wierzchołka: przesuwa wierzchołek. Ograniczenia i ciągłość
+  są zachowywane; w razie potrzeby przesuwają się inne wierzchołki i punkty kontrolne.
+  Jeśli dla nowej pozycji ograniczeń nie da się spełnić, przesuwany jest cały wielokąt,
+  więc wierzchołek zawsze zostaje pod kursorem.
+- Lewy przycisk + przeciąganie punktu kontrolnego Béziera (niebieski punkt): przesuwa punkt
+  kontrolny. Wierzchołki jego własnego segmentu stoją w miejscu; sąsiedni odcinek może się
+  obrócić lub wydłużyć, żeby zachować ciągłość G1/C1.
+- Lewy przycisk + przeciąganie krawędzi: przesuwa cały wielokąt.
+- Prawy przycisk na krawędzi: menu krawędzi.
+    - Add vertex – wstawia wierzchołek w środku krawędzi.
+    - Set length… – ograniczenie stałej długości (tylko odcinki). Okno dialogowe podpowiada
+      aktualną długość.
+    - Make parallel… – potem kliknij lewym przyciskiem drugą krawędź (w dowolnym wielokącie),
+      żeby obie krawędzie były równoległe. Na czas wyboru pierwsza krawędź jest podświetlona
+      na pomarańczowo. Prawy przycisk anuluje wybór. Dostępne tylko dla odcinków.
+    - Convert to line / Convert to Bézier / Convert to arc – zmienia kształt krawędzi.
+    - Remove L=… / Remove ∥n – usuwa ograniczenie tej krawędzi.
+- Prawy przycisk na wierzchołku: menu wierzchołka.
+    - Delete vertex – nieaktywne, gdy wielokąt ma tylko 3 wierzchołki.
+    - Continuity G0 / G1 / C1 – widoczne tylko, gdy wierzchołek styka się z segmentem Béziera
+      lub łukiem. Aktualna wartość jest oznaczona ✓. Pokazywane są tylko klasy ciągłości
+      możliwe w danym wierzchołku (patrz 2).
 
-### Keyboard
+### Klawiatura
 
-- The editor is operated with the mouse only; there are no keyboard shortcuts.
-  In the length dialog Enter confirms and Esc cancels.
+- Edytor obsługuje się wyłącznie myszą; nie ma skrótów klawiszowych.
+  W oknie długości Enter zatwierdza, a Esc anuluje.
 
-### Toolbar
+### Pasek narzędzi
 
-- Library Algorithm / Bresenham Algorithm – chooses how line segments are drawn
-  (Avalonia's DrawLine or my own Bresenham implementation into a pixel buffer).
-  Bézier curves and arcs are drawn as many short segments, so they use the chosen
-  algorithm as well. Helper elements (vertices, control polygon, labels, the orange
-  highlight) are always drawn with the library.
+- Library Algorithm / Bresenham Algorithm – wybór sposobu rysowania odcinków
+  (DrawLine z Avalonii albo moja implementacja algorytmu Bresenhama do bufora pikseli).
+  Krzywe Béziera i łuki są rysowane jako wiele krótkich odcinków, więc też używają wybranego
+  algorytmu. Elementy pomocnicze (wierzchołki, wielokąt kontrolny, etykiety, pomarańczowe
+  podświetlenie) są zawsze rysowane biblioteką.
 
-### What is shown on the scene
+### Co widać na scenie
 
-- Black points – vertices.
-- Blue points and dashed blue lines – Bézier control points and the Bézier control polygon.
-- Blue labels next to vertices – continuity class (only at vertices next to a curve).
-- Red labels next to the middle of an edge – constraints: `L=120` is a fixed length,
-  `∥1`, `∥2`, … mark parallel pairs (both edges of a pair have the same number).
+- Czarne punkty – wierzchołki.
+- Niebieskie punkty i niebieskie przerywane linie – punkty kontrolne i wielokąt kontrolny Béziera.
+- Niebieskie etykiety przy wierzchołkach – klasa ciągłości (tylko przy wierzchołkach obok krzywej).
+- Czerwone etykiety przy środku krawędzi – ograniczenia: `L=120` to stała długość,
+  `∥1`, `∥2`, … oznaczają pary równoległe (obie krawędzie pary mają ten sam numer).
 
-## 2. Assumptions
+## 2. Założenia
 
-- Constraints (fixed length, parallel) are defined for straight segments only.
-  Converting an edge to a Bézier segment or an arc removes its constraints.
-- Two edges that share a vertex cannot be made parallel (they would have to lie on one line).
-- Adding or deleting a vertex removes the constraints of the edges it touches.
-  The new edges are always straight segments, even if the old edge was a curve.
-- A new constraint that cannot be satisfied (e.g. it contradicts other constraints) is
-  not added. A vertex drag that cannot be satisfied moves the whole polygon instead.
-- Default continuity is G1 (surname A–K). When an edge becomes a Bézier segment, its
-  vertices get G1 unless the user has already chosen their continuity explicitly.
-- Arcs support only G0 and G1. When an edge becomes an arc, C1 at its ends is changed to G1,
-  and ends without an explicit choice get G0.
-- Only one end of an arc can have G1. Choosing G1 at the other end switches the first end to G0.
-- At a vertex between two arcs only G0 is possible (neither arc can follow the other).
-- An arc has no control points: its circle is computed from its vertices and the neighbouring
-  edge (see 4.4), so it simply follows its neighbours.
-- Dragging a control point never moves the vertices of its own segment. With G1/C1 it may
-  move the far vertex of a neighbouring straight segment; if that vertex is held by
-  constraints, the neighbour is left as it is.
+- Ograniczenia (stała długość, równoległość) są zdefiniowane tylko dla odcinków.
+  Zamiana krawędzi na segment Béziera lub łuk usuwa jej ograniczenia.
+- Dwóch krawędzi ze wspólnym wierzchołkiem nie można uczynić równoległymi (musiałyby leżeć
+  na jednej prostej).
+- Dodanie lub usunięcie wierzchołka usuwa ograniczenia krawędzi, które go dotyczą.
+  Nowe krawędzie są zawsze odcinkami, nawet jeśli stara krawędź była krzywą.
+- Nowe ograniczenie, którego nie da się spełnić (np. jest sprzeczne z innymi), nie jest
+  dodawane. Przeciągnięcie wierzchołka, którego nie da się spełnić, przesuwa cały wielokąt.
+- Domyślna ciągłość to G1. Gdy krawędź staje się segmentem Béziera, jej
+  wierzchołki dostają G1, chyba że użytkownik wcześniej sam wybrał ich ciągłość.
+- Łuki obsługują tylko G0 i G1. Gdy krawędź staje się łukiem, C1 na jej końcach zmienia się
+  na G1, a końce bez jawnego wyboru dostają G0.
+- Tylko jeden koniec łuku może mieć G1. Wybranie G1 na drugim końcu przełącza pierwszy na G0.
+- W wierzchołku między dwoma łukami możliwe jest tylko G0 (żaden łuk nie może dopasować się
+  do drugiego).
+- Łuk nie ma punktów kontrolnych: jego okrąg jest liczony z wierzchołków i sąsiedniej
+  krawędzi (patrz 4.4), więc po prostu podąża za sąsiadami.
+- Przeciąganie punktu kontrolnego nigdy nie przesuwa wierzchołków jego własnego segmentu.
+  Przy G1/C1 może przesunąć dalszy wierzchołek sąsiedniego odcinka; jeśli ten wierzchołek
+  jest trzymany przez ograniczenia, sąsiad zostaje bez zmian.
 
-## 3. Data model
+## 3. Model danych
 
-- `Vec2` – immutable 2D vector with the usual operators, `Dot`, `Cross`, `Length`, `Normalized`.
-- `Scene` – list of `Polygon`s and a list of `Constraint`s. Constraints live in the scene,
-  not in a polygon, because a parallel constraint can join edges of two different polygons.
-- `Polygon` – ordered lists of `Vertex` and `Edge`; edge i goes from vertex i to vertex i+1
-  (the last edge closes the polygon). Self-intersections are allowed.
-  Operations: `Translate`, `SplitEdge`, `RemoveVertex`, `EdgeBefore`, `EdgeAfter`.
-- `Vertex` – `Position`, `Continuity` (G0/G1/C1) and `ContinuityIsExplicit`
-  (true once the user, or the demo scene, chose the continuity).
-- `Edge` – references its `Start` and `End` vertices and has a `Shape`. It also computes
-  `Direction`, `Length`, `Midpoint` and the tangent vectors at both ends.
-- `EdgeShape` – what the edge looks like between its vertices:
-    - `LineShape` – a straight segment,
-    - `BezierShape` – cubic Bézier with two control points `Control1`, `Control2`
-      (the curve is Start, Control1, Control2, End),
-    - `ArcShape` – a circular arc; it stores nothing, the circle is computed by `ArcGeometry`.
-      Changing an edge's shape replaces only this object; the vertices stay the same.
-- `Constraint` (abstract) – `Edges`, `IsSatisfied()`, `Project(pinned)`, `GetLabel()`.
-  Implementations: `FixedLengthConstraint(edge, length)`, `ParallelConstraint(first, second)`.
-- `DemoScene` – builds the startup scene; adding a polygon takes a few lines
-  (create it from points, add it to `scene.Polygons`, then set shapes, continuity and constraints).
+- `Vec2` – niemutowalny wektor 2D ze zwykłymi operatorami, `Dot`, `Cross`, `Length`, `Normalized`.
+- `Scene` – lista wielokątów (`Polygon`) i lista ograniczeń (`Constraint`). Ograniczenia
+  należą do sceny, a nie do wielokąta, bo równoległość może łączyć krawędzie dwóch różnych
+  wielokątów.
+- `Polygon` – uporządkowane listy `Vertex` i `Edge`; krawędź i prowadzi od wierzchołka i
+  do i+1 (ostatnia krawędź zamyka wielokąt). Samoprzecięcia są dozwolone.
+  Operacje: `Translate`, `SplitEdge`, `RemoveVertex`, `EdgeBefore`, `EdgeAfter`.
+  Reguły ciągłości w wierzchołku: `IsCurvedAt` (czy styka się tu krzywa),
+  `AllowsContinuity` (czy dana klasa ciągłości jest tu możliwa), `KeepSingleG1`
+  (pilnuje, żeby łuk miał G1 najwyżej na jednym końcu).
+- `Vertex` – `Position`, `Continuity` (G0/G1/C1) i `ContinuityIsExplicit`
+  (true, gdy ciągłość wybrał użytkownik albo scena demo).
+- `Edge` – wskazuje wierzchołki `Start` i `End` i ma kształt `Shape`. Liczy też
+  `Direction`, `Length`, `Midpoint` i wektory styczne na obu końcach (pyta o nie kształt).
+- `EdgeShape` (abstrakcyjna) – jak wygląda krawędź między wierzchołkami:
+    - `LineShape` – odcinek,
+    - `BezierShape` – krzywa Béziera 3. stopnia z dwoma punktami kontrolnymi `Control1`,
+      `Control2` (krzywa to Start, Control1, Control2, End),
+    - `ArcShape` – łuk okręgu; nic nie przechowuje, okrąg liczy `ArcGeometry`.
 
-Code layout: `Model` (data), `Geometry` (math types), `Constraints` (solvers),
-`Rendering` (drawing algorithms), `Editing` (hit testing), `Views` (UI).
-The model does not depend on the UI.
+  Zmiana kształtu krawędzi podmienia tylko ten obiekt; wierzchołki zostają te same.
 
-## 4. Algorithms
+  Zachowanie zależne od kształtu jest zapisane jako metody i właściwości wirtualne
+  (polimorfizm), więc reszta kodu nie sprawdza typu kształtu:
+    - `TangentAtStart` / `TangentAtEnd` – wektory styczne na końcach,
+    - `FollowEnds` – co zrobić, gdy wierzchołki krawędzi się przesunęły (Bézier przesuwa
+      swoje ramiona),
+    - `Curve` – krzywa parametryczna `t ∈ [0, 1] → punkt`, używana do trafiania myszą,
+    - `IsStraight` – czy to odcinek (ograniczenia, brak etykiety ciągłości),
+    - `AdaptsToNeighbours` – czy kształt sam dopasowuje się do stycznej sąsiada (łuk),
+    - `MaxContinuity` – najwyższa ciągłość możliwa na końcach (łuk: G1, pozostałe: C1),
+    - `ApplyDefaultContinuity` – ustawia domyślną ciągłość zaraz po zmianie kształtu.
 
-### 4.1 Constraint solver (`ConstraintSolver`)
+  `LineShape`, `BezierShape` i `ArcShape` nadpisują tylko to, co u nich jest inne.
+  Sprawdzanie typu zostało tylko tam, gdzie kod potrzebuje danych jednego typu (punkty
+  kontrolne Béziera), oraz przy rysowaniu w widoku, bo model nie zależy od kodu rysującego.
+- `Constraint` (abstrakcyjna) – `Edges`, `IsSatisfied()`, `Project(pinned)`, `GetLabel()`.
+  Implementacje: `FixedLengthConstraint(edge, length)`, `ParallelConstraint(first, second)`.
+- `DemoScene` – buduje scenę startową; dodanie wielokąta to kilka linii (utworzenie z punktów,
+  dodanie do `scene.Polygons`, potem ustawienie kształtów, ciągłości i ograniczeń).
 
-Iterative projection (relaxation):
+Układ kodu: `Model` (dane), `Geometry` (typy matematyczne), `Constraints` (solvery),
+`Rendering` (algorytmy rysowania), `Editing` (trafianie myszą), `Views` (interfejs).
+Model nie zależy od interfejsu.
 
-1. Save the positions of all vertices.
-2. Repeat up to 100 times: if every constraint is satisfied (tolerance 1e-6), stop with success.
-   Otherwise call `Project` on every constraint in turn. `Project` moves the vertices of its
-   edges as little as possible so that this one constraint holds, possibly breaking another
-   one, which is fixed in the next pass.
-3. If the constraints are still not satisfied, restore the saved positions and report failure.
+## 4. Algorytmy
 
-The pinned vertex is the vertex dragged by the user. Constraints never move it, so it stays
-under the cursor; the other end of its edge is moved instead.
+### 4.1 Solver ograniczeń (`ConstraintSolver`)
 
-- Fixed length: the error `|AB| - L` is corrected along the edge direction – fully on the
-  free end if one end is pinned, otherwise half at each end.
-- Parallel: the target direction is the direction of the edge with the pinned vertex,
-  or the average of both unit directions if neither is pinned (the second direction is
-  flipped first if the edges point in opposite ways, so they are not forced to turn around).
-  Each edge is then rotated to the target direction, keeping its length, around the pinned
-  vertex or around its midpoint.
+Iteracyjne rzutowanie (relaksacja):
 
-Moving a vertex = set the new position, run the solver; if it fails, the old position is
-restored and the polygon is translated instead.
-Adding a constraint = add it, run the solver; if it fails, the constraint is removed.
+1. Zapamiętaj pozycje wszystkich wierzchołków.
+2. Powtarzaj najwyżej 100 razy: jeśli każde ograniczenie jest spełnione (tolerancja 1e-6),
+   zakończ sukcesem. W przeciwnym razie wywołaj po kolei `Project` każdego ograniczenia.
+   `Project` przesuwa wierzchołki swoich krawędzi jak najmniej, żeby to jedno ograniczenie
+   było spełnione; może przy tym zepsuć inne, które zostanie poprawione w następnym przebiegu.
+3. Jeśli ograniczenia dalej nie są spełnione, przywróć zapamiętane pozycje i zgłoś porażkę.
 
-### 4.2 Continuity (`ContinuitySolver`)
+Przypięty wierzchołek to ten, który przeciąga użytkownik. Ograniczenia nigdy go nie
+przesuwają, więc zostaje pod kursorem; zamiast niego przesuwa się drugi koniec krawędzi.
 
-Tangent vectors at the ends of an edge: a line has `B - A` at both ends; a Bézier segment
-has `3(P1 - P0)` at the start and `3(P3 - P2)` at the end.
+- Stała długość: błąd `|AB| - L` jest poprawiany wzdłuż kierunku krawędzi – w całości na
+  wolnym końcu, jeśli drugi jest przypięty, w przeciwnym razie po połowie na każdym końcu.
+- Równoległość: docelowy kierunek to kierunek krawędzi z przypiętym wierzchołkiem albo,
+  jeśli żaden nie jest przypięty, średnia obu kierunków jednostkowych (drugi kierunek jest
+  najpierw odwracany, jeśli krawędzie są skierowane przeciwnie, żeby nie musiały się obracać
+  o 180°). Każda krawędź jest potem obracana do docelowego kierunku z zachowaniem długości,
+  wokół przypiętego wierzchołka albo wokół swojego środka.
 
-- `Apply` – for every vertex with G1 or C1 next to a Bézier segment, the control point
-  next to the vertex is placed on the tangent line of the other edge:
-    - G1: same direction, the arm keeps its current length,
-    - C1: same tangent vector, so the arm is `tangent / 3`.
-      Vertices are never moved here, so the edge constraints stay satisfied.
-      The control point being dragged is locked; the one on the other side is fitted instead.
-- After a vertex drag, the control points next to each moved vertex are moved by the same
-  vector (`FollowVertices`), then `Apply` restores continuity.
-- Dragging a control point next to a straight segment with G1/C1: the far vertex of that
-  segment is moved (through the constraint solver) so the segment lies on the extension of
-  the control arm. For C1 the segment length becomes 3 × arm length.
+Przesunięcie wierzchołka = ustaw nową pozycję i uruchom solver; jeśli się nie uda, stara
+pozycja jest przywracana, a zamiast tego przesuwany jest cały wielokąt.
+Dodanie ograniczenia = dodaj je i uruchom solver; jeśli się nie uda, ograniczenie jest usuwane.
 
-### 4.3 Bézier drawing (`BezierDrawer`) – incremental algorithm
+### 4.2 Ciągłość (`ContinuitySolver`)
 
-1. Change to the power basis: `P(t) = A t³ + B t² + C t + D`, where
+Wektory styczne na końcach krawędzi (`EdgeShape.TangentAtStart` / `TangentAtEnd`): odcinek ma
+`B - A` na obu końcach; segment Béziera ma `3(P1 - P0)` na początku i `3(P3 - P2)` na końcu.
+
+- `Apply` – dla każdego wierzchołka z G1 lub C1 obok segmentu Béziera punkt kontrolny przy
+  wierzchołku jest ustawiany na prostej stycznej drugiej krawędzi:
+    - G1: ten sam kierunek, ramię zachowuje obecną długość,
+    - C1: ten sam wektor styczny, więc ramię to `styczna / 3`.
+
+  Wierzchołki nie są tu przesuwane, więc ograniczenia krawędzi pozostają spełnione.
+  Przeciągany punkt kontrolny jest zablokowany; dopasowywany jest ten po drugiej stronie.
+  Wierzchołki obok łuku są pomijane – łuk sam dopasowuje się do sąsiada (patrz 4.4).
+- Po przeciągnięciu wierzchołka punkty kontrolne przy każdym przesuniętym wierzchołku są
+  przesuwane o ten sam wektor (`FollowVertices`, które wywołuje `EdgeShape.FollowEnds`),
+  potem `Apply` przywraca ciągłość.
+- Przeciąganie punktu kontrolnego obok odcinka z G1/C1: dalszy wierzchołek tego odcinka jest
+  przesuwany (przez solver ograniczeń) tak, żeby odcinek leżał na przedłużeniu ramienia
+  kontrolnego. Dla C1 długość odcinka staje się równa 3 × długość ramienia.
+
+### 4.3 Rysowanie krzywej Béziera (`BezierDrawer`) – algorytm przyrostowy
+
+1. Przejście do bazy potęgowej: `P(t) = A t³ + B t² + C t + D`, gdzie
    `A = -P0 + 3P1 - 3P2 + P3`, `B = 3P0 - 6P1 + 3P2`, `C = 3(P1 - P0)`, `D = P0`.
-2. Choose the number of steps n from the length of the control polygon (about 5 px per step),
-   step h = 1/n.
-3. Forward differences: `Δ1 = A h³ + B h² + C h`, `Δ2 = 6A h³ + 2B h²`, `Δ3 = 6A h³`.
-4. Starting at `P0`, each next point is `point + Δ1`, then `Δ1 += Δ2`, `Δ2 += Δ3` –
-   only additions per point. Consecutive points are joined with the selected line algorithm;
-   the last point is set exactly to `P3`.
+2. Liczba kroków n zależy od długości wielokąta kontrolnego (ok. 5 px na krok), krok h = 1/n.
+3. Różnice w przód: `Δ1 = A h³ + B h² + C h`, `Δ2 = 6A h³ + 2B h²`, `Δ3 = 6A h³`.
+4. Zaczynając od `P0`, każdy kolejny punkt to `punkt + Δ1`, potem `Δ1 += Δ2`, `Δ2 += Δ3` –
+   na punkt przypadają same dodawania. Kolejne punkty są łączone wybranym algorytmem rysowania
+   odcinków; ostatni punkt jest ustawiany dokładnie na `P3`.
 
-### 4.4 Arcs (`ArcGeometry`, `ArcDrawer`)
+### 4.4 Łuki (`ArcGeometry`, `ArcDrawer`)
 
-- G1 at the start A (neighbour edge is not an arc): the circle passes through A and B and is
-  tangent at A to the tangent t of the previous edge. The centre lies on the normal n at A:
-  `C = A + r·n`, with signed radius `r = |B - A|² / (2 n·(B - A))`. The sweep direction is the
-  one that leaves A along t. G1 at the end B is the same construction from B backwards.
-  If B lies on the tangent line, the arc degenerates and a straight segment is drawn.
-- G0 at both ends: a half circle with the centre in the middle of the edge and radius |AB| / 2.
-- Drawing: the arc is divided into about 5 px long pieces; points `C + r(cos φ, sin φ)` are
-  joined with the selected line algorithm.
+- G1 na początku A (sąsiednia krawędź nie jest łukiem): okrąg przechodzi przez A i B i jest
+  w A styczny do stycznej t poprzedniej krawędzi. Środek leży na normalnej n w A:
+  `C = A + r·n`, ze znakowanym promieniem `r = |B - A|² / (2 n·(B - A))`. Kierunek łuku to ten,
+  w którym łuk wychodzi z A wzdłuż t. G1 na końcu B to ta sama konstrukcja, liczona od B wstecz.
+  Jeśli B leży na prostej stycznej, łuk się degeneruje i rysowany jest odcinek.
+- G0 na obu końcach: półokrąg o środku w połowie krawędzi i promieniu |AB| / 2.
+- Rysowanie: łuk jest dzielony na kawałki długości ok. 5 px; punkty `C + r(cos φ, sin φ)`
+  są łączone wybranym algorytmem rysowania odcinków.
 
-### 4.5 Bresenham line (`BresenhamLineDrawer`)
+### 4.5 Odcinek Bresenhama (`BresenhamLineDrawer`)
 
-Integer midpoint algorithm for all octants: `dx = |x1 - x0|`, `dy = -|y1 - y0|`, error
-`err = dx + dy`. In each step the pixel is set and, depending on `2·err`, x and/or y is advanced
-and the error updated. Pixels go to a `PixelBuffer`, which is copied to a bitmap.
+Całkowitoliczbowy algorytm punktu środkowego dla wszystkich oktantów: `dx = |x1 - x0|`,
+`dy = -|y1 - y0|`, błąd `err = dx + dy`. W każdym kroku stawiany jest piksel i zależnie od
+`2·err` zwiększane jest x i/lub y, a błąd aktualizowany. Piksele trafiają do `PixelBuffer`,
+który jest kopiowany do bitmapy.
 
-### 4.6 Hit testing (`HitTester`)
+### 4.6 Trafianie myszą (`HitTester`)
 
-Priority: vertex (radius 8 px), then control point, then edge (5 px). Distance to a straight
-edge is the distance to a segment; a curve is approximated by a polyline of sample points.
+Kolejność: wierzchołek (promień 8 px), potem punkt kontrolny, potem krawędź (5 px).
+Każdy kształt zwraca swoją krzywą parametryczną (`EdgeShape.Curve`); krzywa jest przybliżana
+łamaną z 32 odcinków, a odległość od punktu to najmniejsza odległość od tych odcinków.
+Dla odcinka daje to dokładnie odległość od odcinka.
